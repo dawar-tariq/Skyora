@@ -9,8 +9,9 @@ import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.preferencesDataStoreFile
 
 /**
- * Two independent DataStore files keep user preferences safe when the weather
- * cache is cleared, and keep cache writes away from the preferences file.
+ * Independent DataStore files keep user preferences safe when the weather cache
+ * is cleared, keep cache writes away from the preferences file, and let the
+ * widget-refresh journal survive "clear cache" in Settings.
  */
 object SkyoraDataStores {
     fun preferences(context: Context): DataStore<Preferences> =
@@ -23,5 +24,12 @@ object SkyoraDataStores {
         PreferenceDataStoreFactory.create(
             corruptionHandler = ReplaceFileCorruptionHandler { emptyPreferences() },
             produceFile = { context.preferencesDataStoreFile("skyora_weather_cache") },
+        )
+
+    /** Background-refresh journal, read by the Widget reliability screen. */
+    fun widgetStatus(context: Context): DataStore<Preferences> =
+        PreferenceDataStoreFactory.create(
+            corruptionHandler = ReplaceFileCorruptionHandler { emptyPreferences() },
+            produceFile = { context.preferencesDataStoreFile("skyora_widget_status") },
         )
 }

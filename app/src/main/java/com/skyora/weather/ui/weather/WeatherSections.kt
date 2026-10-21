@@ -173,12 +173,8 @@ fun WeatherHero(
                     style = SkyoraTextStyles.SectionLabel,
                     color = SkyoraColors.TextSecondary,
                 )
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    text = description,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = SkyoraColors.TextSecondary,
-                )
+                // The condition is shown once, under the temperature. Printing it
+                // here too made the hero read "Clear sky" twice in a row.
             }
             WeatherIcon(
                 resId = weatherIconRes(

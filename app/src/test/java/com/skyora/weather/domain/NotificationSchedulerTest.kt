@@ -45,6 +45,55 @@ class NotificationSchedulerTest {
         assertEquals(31 * 60_000L, NotificationScheduler.delayUntil(23 * 60 + 59, at(23, 28)))
     }
 
+    /**
+     * The delivery time follows the *city's* clock. 07:30 in Tokyo is a very
+     * different instant than 07:30 in Srinagar, and a user who saved Tokyo must
+     * get the summary at Tokyo breakfast time.
+     */
+    @Test
+    fun `delivery time is resolved in the requested city zone`() {
+        val tokyo = ZoneId.of("Asia/Tokyo")
+        // 06:00 in Tokyo == 02:30 in Srinagar on the same date.
+        val nowInTokyo = ZonedDateTime.of(2026, 10, 20, 6, 0, 0, 0, tokyo)
+        assertEquals(90 * 60_000L, NotificationScheduler.delayUntil(minutes, nowInTokyo))
+
+        val nowInSrinagar = nowInTokyo.withZoneSameInstant(zone)
+        assertEquals(5 * hourMs, NotificationScheduler.delayUntil(minutes, nowInSrinagar))
+    }
+
+    @Test
+    fun `a known city timezone is used for scheduling`() {
+        assertEquals(
+            ZoneId.of("Asia/Tokyo"),
+            NotificationScheduler.zoneFor(
+                com.skyora.weather.domain.model.Location(
+                    id = "tokyo",
+                    name = "Tokyo",
+                    latitude = 35.68,
+                    longitude = 139.69,
+                    timezone = "Asia/Tokyo",
+                ),
+            ),
+        )
+    }
+
+    @Test
+    fun `an unknown or malformed city timezone falls back to null`() {
+        assertEquals(null, NotificationScheduler.zoneFor(null))
+        assertEquals(
+            null,
+            NotificationScheduler.zoneFor(
+                com.skyora.weather.domain.model.Location(
+                    id = "x",
+                    name = "X",
+                    latitude = 0.0,
+                    longitude = 0.0,
+                    timezone = "GMT+5:30",
+                ),
+            ),
+        )
+    }
+
     @Test
     fun `delay is never negative`() {
         for (minute in 0 until 1440 step 5) {

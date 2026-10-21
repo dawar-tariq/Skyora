@@ -47,6 +47,7 @@ import androidx.compose.material.icons.outlined.Straighten
 import androidx.compose.material.icons.outlined.Warning
 import androidx.compose.material.icons.outlined.WaterDrop
 import androidx.compose.material.icons.outlined.WbSunny
+import androidx.compose.material.icons.outlined.Widgets
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHostState
@@ -123,6 +124,7 @@ fun SettingsScreen(
     container: AppContainer,
     onBack: () -> Unit,
     onChangeHomeCity: () -> Unit,
+    onOpenWidgetReliability: () -> Unit,
     onRestartOnboarding: () -> Unit,
 ) {
     val viewModel: SettingsViewModel = viewModel(factory = SettingsViewModel.factory(container))
@@ -399,6 +401,17 @@ fun SettingsScreen(
                             onClick = { context.openNotificationSettings() },
                         )
                     }
+                }
+            }
+
+            item(key = "widgets") {
+                SettingsSection(title = stringResource(R.string.settings_widgets)) {
+                    SettingsNavRow(
+                        icon = Icons.Outlined.Widgets,
+                        title = stringResource(R.string.settings_widget_reliability),
+                        description = stringResource(R.string.settings_widget_reliability_desc),
+                        onClick = onOpenWidgetReliability,
+                    )
                 }
             }
 

@@ -333,37 +333,55 @@ private fun DrawScope.drawStars(stars: List<StarSpec>, progress: Float, alphaMul
 
 private fun DrawScope.drawMoon(centerX: Float, centerY: Float, radius: Float) {
     val center = Offset(centerX, centerY)
+    // Layered bloom instead of one 2-stop gradient: a single gradient shows a
+    // hard ring where it hits transparent, which is what made the moon look
+    // like a pasted disc on the device screenshot.
+    listOf(5.4f to 0.055f, 3.6f to 0.075f, 2.4f to 0.10f).forEach { (scale, alpha) ->
+        drawCircle(
+            brush = Brush.radialGradient(
+                colors = listOf(
+                    Color(0xFF9CE4FF).copy(alpha = alpha),
+                    Color(0xFF6FC6FF).copy(alpha = alpha * 0.45f),
+                    Color.Transparent,
+                ),
+                center = center,
+                radius = radius * scale,
+            ),
+            radius = radius * scale,
+            center = center,
+        )
+    }
+    // Flat-ish disc: highlights share the disc's own centre so it reads as a
+    // moon, not a glossy sphere.
     drawCircle(
         brush = Brush.radialGradient(
-            colors = listOf(
-                Color(0xFF9CE4FF).copy(alpha = 0.20f),
-                Color(0xFF6FC6FF).copy(alpha = 0.06f),
-                Color.Transparent,
+            colorStops = arrayOf(
+                0f to Color(0xFFFCFEFF),
+                0.55f to Color(0xFFF1FAFF),
+                0.86f to Color(0xFFD5EEFB),
+                1f to Color(0xFFBFE2F4),
             ),
             center = center,
-            radius = radius * 5.2f,
-        ),
-        radius = radius * 5.2f,
-        center = center,
-    )
-    drawCircle(
-        brush = Brush.radialGradient(
-            colors = listOf(Color(0xFFF6FEFF), Color(0xFFD7F1FF), Color(0xFFAFDCF7)),
-            center = Offset(center.x - radius * 0.28f, center.y - radius * 0.32f),
-            radius = radius * 1.5f,
+            radius = radius,
         ),
         radius = radius,
         center = center,
     )
+    // Soft maria, clipped visually by staying well inside the limb.
     drawCircle(
-        color = Color(0xFF8FC2D8).copy(alpha = 0.22f),
-        radius = radius * 0.22f,
-        center = Offset(center.x + radius * 0.32f, center.y + radius * 0.20f),
+        color = Color(0xFF8FC2D8).copy(alpha = 0.18f),
+        radius = radius * 0.24f,
+        center = Offset(center.x + radius * 0.30f, center.y + radius * 0.18f),
     )
     drawCircle(
-        color = Color(0xFF8FC2D8).copy(alpha = 0.16f),
-        radius = radius * 0.14f,
-        center = Offset(center.x - radius * 0.30f, center.y + radius * 0.34f),
+        color = Color(0xFF8FC2D8).copy(alpha = 0.13f),
+        radius = radius * 0.15f,
+        center = Offset(center.x - radius * 0.28f, center.y + radius * 0.32f),
+    )
+    drawCircle(
+        color = Color(0xFF8FC2D8).copy(alpha = 0.10f),
+        radius = radius * 0.11f,
+        center = Offset(center.x - radius * 0.34f, center.y - radius * 0.26f),
     )
 }
 
@@ -375,20 +393,35 @@ private fun DrawScope.drawSunDisc(
     outer: Color,
 ) {
     val center = Offset(centerX, centerY)
-    drawCircle(
-        brush = Brush.radialGradient(
-            colors = listOf(inner.copy(alpha = 0.34f), Color.Transparent),
+    // Same layered-bloom treatment as the moon, warm and wider, so daylight
+    // has a soft atmospheric glow rather than a hard halo edge.
+    listOf(5.6f to 0.07f, 3.6f to 0.10f, 2.3f to 0.14f).forEach { (scale, alpha) ->
+        drawCircle(
+            brush = Brush.radialGradient(
+                colors = listOf(
+                    inner.copy(alpha = alpha),
+                    inner.copy(alpha = alpha * 0.4f),
+                    Color.Transparent,
+                ),
+                center = center,
+                radius = radius * scale,
+            ),
+            radius = radius * scale,
             center = center,
-            radius = radius * 5f,
-        ),
-        radius = radius * 5f,
-        center = center,
-    )
+        )
+    }
+    // Disc: bright core, warm rim, no offset highlight (that offset is what
+    // turned the sun into a ceramic ball in the screenshot).
     drawCircle(
         brush = Brush.radialGradient(
-            colors = listOf(inner, outer),
-            center = Offset(center.x - radius * 0.2f, center.y - radius * 0.25f),
-            radius = radius * 1.6f,
+            colorStops = arrayOf(
+                0f to Color(0xFFFFFDF4),
+                0.5f to inner,
+                0.85f to outer,
+                1f to outer.copy(alpha = 0.94f),
+            ),
+            center = center,
+            radius = radius,
         ),
         radius = radius,
         center = center,
