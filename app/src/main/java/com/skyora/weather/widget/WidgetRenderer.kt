@@ -14,6 +14,7 @@ import com.skyora.weather.core.util.formatHour
 import com.skyora.weather.core.util.formatTemperature
 import com.skyora.weather.core.util.updateAge
 import com.skyora.weather.di.AppContainer
+import com.skyora.weather.domain.model.HourlyWindow
 import com.skyora.weather.domain.model.Location
 import com.skyora.weather.domain.model.SkyMoments
 import com.skyora.weather.domain.model.SkyPhase
@@ -161,8 +162,13 @@ object WidgetRenderer {
             views.setViewVisibility(R.id.widget_high_low, View.GONE)
         }
 
-        // Hourly slots: skip the leading "now" bucket so the strip shows what's next.
-        val hours = snapshot.hourly.drop(1).take(4)
+        // Hourly slots: the next four hours, shared with the in-app strip so a
+        // cached snapshot cannot show past hours as upcoming.
+        val hours = HourlyWindow.upcoming(
+            hours = snapshot.hourly,
+            nowMillis = System.currentTimeMillis(),
+            limit = 4,
+        )
         val zone = snapshot.zoneId()
         val slotIds = listOf(
             Triple(R.id.hour_1_label, R.id.hour_1_icon, R.id.hour_1_temp),
