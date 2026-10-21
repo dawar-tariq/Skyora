@@ -1,0 +1,110 @@
+name: Android
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: android-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  build:
+    name: Test and assemble debug APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Ensure SDK platform 35
+        run: |
+          set -x
+          SDK="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}}"
+          echo "ANDROID_HOME=$SDK" >> "$GITHUB_ENV"
+          echo "ANDROID_SDK_ROOT=$SDK" >> "$GITHUB_ENV"
+          echo "sdk.dir=$SDK" > local.properties
+          if [ -d "$SDK/platforms/android-35" ]; then
+            echo "android-35 already installed"
+          else
+            yes | "$SDK/cmdline-tools/latest/bin/sdkmanager" \
+              "platforms;android-35" "build-tools;35.0.0" "platform-tools"
+          fi
+          ls "$SDK/platforms"
+
+      - name: Unit tests
+        run: |
+          set -o pipefail
+          ./gradlew --no-daemon --stacktrace --console=plain testDebugUnitTest 2>&1 | tee gradle-test.log
+
+      - name: Assemble debug APK
+        run: |
+          set -o pipefail
+          ./gradlew --no-daemon --stacktrace --console=plain assembleDebug 2>&1 | tee gradle-assemble.log
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: skyora-debug-apk
+          path: app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Upload build logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-logs
+          path: |
+            gradle-test.log
+            gradle-assemble.log
+            app/build/reports/tests/**
+            app/build/test-results/**
+          if-no-files-found: ignore
+
+      - name: Publish failure summary
+        if: failure()
+        run: |
+          LOG=$(ls gradle-assemble.log gradle-test.log 2>/dev/null | tail -n 1)
+          {
+            echo "## Build failed"
+            echo '```'
+            tail -n 120 "$LOG" 2>/dev/null || echo "no gradle log captured"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          # Surface compiler/test errors as annotations (readable through the API).
+          grep -a -m 12 -E "^e: |error:|FAILED|Execution failed|Caused by:" "$LOG" 2>/dev/null \
+            | sed -e 's/%/%25/g' -e 's/\r//g' -e 's/^/::error::/' || true
+
+          PR="${{ github.event.pull_request.number }}"
+          if [ -z "$PR" ]; then
+            PR=$(gh pr list --head "${GITHUB_HEAD_REF:-$GITHUB_REF_NAME}" --state open --json number -q '.[0].number' 2>/dev/null || true)
+          fi
+          if [ -n "$PR" ]; then
+            {
+              echo "Build failed for \`$GITHUB_SHA\`."
+              echo '```'
+              tail -n 120 "$LOG" 2>/dev/null || echo "no gradle log captured"
+              echo '```'
+            } > failure.txt
+            gh pr comment "$PR" --body-file failure.txt
+          fi
+        env:
+          GH_TOKEN: ${{ github.token }}

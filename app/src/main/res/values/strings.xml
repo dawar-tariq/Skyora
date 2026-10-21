@@ -1,0 +1,378 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">SKYORA</string>
+    <string name="brand_wordmark">SKYORA</string>
+    <string name="brand_tagline">Weather for a better tomorrow</string>
+
+    <!-- Common actions -->
+    <string name="action_retry">Try again</string>
+    <string name="action_refresh">Refresh forecast</string>
+    <string name="action_back">Go back</string>
+    <string name="action_close">Close</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="action_ok">OK</string>
+    <string name="action_search">Search</string>
+    <string name="action_settings">Settings</string>
+    <string name="action_next">Next</string>
+    <string name="action_skip">Skip</string>
+    <string name="action_get_started">Get Started</string>
+    <string name="action_maybe_later">Maybe Later</string>
+    <string name="action_continue">Continue</string>
+    <string name="action_add_city">Add City</string>
+    <string name="action_edit">Edit</string>
+    <string name="action_done">Done</string>
+    <string name="action_remove">Remove</string>
+    <string name="action_save">Save</string>
+    <string name="action_clear">Clear</string>
+    <string name="action_clear_all">Clear all</string>
+    <string name="action_undo">Undo</string>
+    <string name="action_use_current_location">Use current location</string>
+    <string name="action_set_as_home">Set as home</string>
+    <string name="action_open_settings">Open settings</string>
+    <string name="action_enable_location">Enable location</string>
+    <string name="action_choose_city">Pick a city</string>
+    <string name="action_find_city">Find a City</string>
+    <string name="action_delete">Delete</string>
+    <string name="action_dismiss">Dismiss</string>
+    <string name="action_clear_cache">Clear cached weather</string>
+    <string name="action_reset_onboarding">Reset onboarding</string>
+    <string name="action_learn_more">Learn more</string>
+    <string name="action_grant_permission">Allow location access</string>
+    <string name="action_not_now">Not now</string>
+    <string name="action_go_home">Go to Home</string>
+
+    <!-- Navigation -->
+    <string name="nav_home">Home</string>
+    <string name="nav_search">Search</string>
+    <string name="nav_saved">Saved</string>
+
+    <!-- Splash -->
+    <string name="splash_loading">Preparing your forecast…</string>
+
+    <!-- Onboarding -->
+    <string name="onboarding_skip">Skip</string>
+    <string name="onboarding_next">Next</string>
+    <string name="onboarding_start">Get Started</string>
+    <string name="onboarding_page_indicator">Page %1$d of %2$d</string>
+    <string name="onboarding_badge_forecast">Live forecasts</string>
+    <string name="onboarding_1_title">Accurate Weather Forecasts</string>
+    <string name="onboarding_1_body">Real-time conditions, hourly detail and a 7-day outlook for any city in the world.</string>
+    <string name="onboarding_2_title">Your Location, Your Weather</string>
+    <string name="onboarding_2_body">Enable optional location access for precise local forecasts. You’re always in control.</string>
+    <string name="onboarding_3_title">Save Your Favorite Cities</string>
+    <string name="onboarding_3_body">Keep the places you care about in one place and switch between them instantly.</string>
+    <string name="onboarding_illustration_forecast">Illustration of a weather app card showing a sunny forecast</string>
+    <string name="onboarding_illustration_location">Illustration of a location pin with gentle signal rings</string>
+    <string name="onboarding_illustration_cities">Illustration of a list of saved cities</string>
+
+    <!-- Location permission -->
+    <string name="permission_title">Allow Location Access</string>
+    <string name="permission_subtitle">Get accurate weather for exactly where you are. SKYORA only uses your location while you’re using the app.</string>
+    <string name="permission_benefit_realtime">Real-time weather updates</string>
+    <string name="permission_benefit_realtime_desc">Forecasts that follow you as you move.</string>
+    <string name="permission_benefit_local">Accurate local forecasts</string>
+    <string name="permission_benefit_local_desc">Precise conditions for your neighbourhood.</string>
+    <string name="permission_benefit_experience">A better experience</string>
+    <string name="permission_benefit_experience_desc">One tap to the weather where you are.</string>
+    <string name="permission_allow">Allow Location Access</string>
+    <string name="permission_maybe_later">Maybe Later</string>
+    <string name="permission_choose_manually">Choose a city manually</string>
+    <string name="permission_privacy_note">Your coordinates are only sent to Open-Meteo to fetch the forecast. Location is optional and can be revoked at any time.</string>
+    <string name="permission_locating">Finding your location…</string>
+    <string name="permission_granted">Location enabled</string>
+    <string name="permission_denied_title">Location access is off</string>
+    <string name="permission_denied_body">No problem — you can still check the weather for any city. You can enable location later in Settings.</string>
+    <string name="permission_denied_permanent_body">Location permission was permanently denied. Enable it in system settings to use local weather.</string>
+    <string name="permission_unavailable_title">Couldn’t get your location</string>
+    <string name="permission_unavailable_body">Make sure location services are on, then try again. You can also pick a city manually.</string>
+    <string name="permission_approximate_note">Using approximate location. For street-level forecasts, allow precise location in system settings.</string>
+    <string name="permission_try_again">Try again</string>
+
+    <!-- Home -->
+    <string name="home_greeting">Weather for a better tomorrow</string>
+    <string name="home_hourly_title">Hourly Forecast</string>
+    <string name="home_hourly_subtitle">Next 24 hours</string>
+    <string name="home_daily_title">7-Day Forecast</string>
+    <string name="home_details_title">Weather Details</string>
+    <string name="home_now">Now</string>
+    <string name="home_feels_like">Feels like %1$s</string>
+    <string name="home_high_low">H %1$s · L %2$s</string>
+    <string name="home_high_low_compact">H %1$s  L %2$s</string>
+    <string name="home_sun_section">Sun &amp; daylight</string>
+    <string name="home_sunrise">Sunrise</string>
+    <string name="home_sunset">Sunset</string>
+    <string name="home_daylight">%1$s of daylight</string>
+    <string name="home_updated_just_now">Updated just now</string>
+    <string name="home_updated_minutes">Updated %1$d min ago</string>
+    <string name="home_updated_hours">Updated %1$d hr ago</string>
+    <string name="home_updated_absolute">Updated %1$s</string>
+    <string name="home_default_banner_title">Weather wherever you are</string>
+    <string name="home_default_banner_body">Enable location for local conditions, or pick a city to follow.</string>
+    <string name="home_offline_title">You’re offline</string>
+    <string name="home_offline_body">Showing the most recent forecast from %1$s.</string>
+    <string name="home_refresh_failed">Couldn’t refresh the forecast. Showing data from %1$s.</string>
+    <string name="home_location_revoked">Location permission was removed. Showing your default city instead.</string>
+    <string name="home_current_location">Current location</string>
+    <string name="home_stale_badge">Saved forecast</string>
+    <string name="home_setup_notice">Set up local weather</string>
+    <string name="home_attribution">Weather data by Open-Meteo</string>
+
+    <!-- Metrics -->
+    <string name="metric_feels_like">Feels like</string>
+    <string name="metric_humidity">Humidity</string>
+    <string name="metric_humidity_caption">Relative humidity</string>
+    <string name="metric_wind">Wind</string>
+    <string name="metric_wind_caption">Direction %1$s</string>
+    <string name="metric_wind_calm">Calm</string>
+    <string name="metric_gusts">Gusts %1$s</string>
+    <string name="metric_uv">UV Index</string>
+    <string name="metric_uv_caption">Today’s peak</string>
+    <string name="metric_pressure">Pressure</string>
+    <string name="metric_pressure_caption">At sea level</string>
+    <string name="metric_cloud">Cloud cover</string>
+    <string name="metric_cloud_caption">Sky coverage</string>
+    <string name="metric_precipitation">Precipitation</string>
+    <string name="metric_precipitation_caption">Last hour</string>
+    <string name="metric_visibility">Visibility</string>
+    <string name="metric_visibility_caption">Current conditions</string>
+    <string name="unit_hpa">hPa</string>
+    <string name="unit_percent">%%</string>
+    <string name="uv_low">Low</string>
+    <string name="uv_moderate">Moderate</string>
+    <string name="uv_high">High</string>
+    <string name="uv_very_high">Very high</string>
+    <string name="uv_extreme">Extreme</string>
+    <string name="value_unavailable">—</string>
+
+    <!-- Forecasts -->
+    <string name="forecast_precip_chance">%1$d%%</string>
+    <string name="forecast_today">Today</string>
+    <string name="forecast_tomorrow">Tomorrow</string>
+    <string name="forecast_hourly_item_desc">%1$s, %2$s, %3$s</string>
+    <string name="forecast_daily_item_desc">%1$s, %2$s, high %3$s, low %4$s</string>
+    <string name="forecast_day_selector">%1$s forecast</string>
+
+    <!-- Weather descriptions (WMO codes) -->
+    <string name="weather_clear">Clear sky</string>
+    <string name="weather_mainly_clear">Mainly clear</string>
+    <string name="weather_partly_cloudy">Partly cloudy</string>
+    <string name="weather_overcast">Overcast</string>
+    <string name="weather_fog">Fog</string>
+    <string name="weather_depositing_rime_fog">Freezing fog</string>
+    <string name="weather_drizzle_light">Light drizzle</string>
+    <string name="weather_drizzle_moderate">Drizzle</string>
+    <string name="weather_drizzle_dense">Dense drizzle</string>
+    <string name="weather_freezing_drizzle_light">Light freezing drizzle</string>
+    <string name="weather_freezing_drizzle_dense">Dense freezing drizzle</string>
+    <string name="weather_rain_slight">Light rain</string>
+    <string name="weather_rain_moderate">Rain</string>
+    <string name="weather_rain_heavy">Heavy rain</string>
+    <string name="weather_freezing_rain_light">Light freezing rain</string>
+    <string name="weather_freezing_rain_heavy">Heavy freezing rain</string>
+    <string name="weather_snow_slight">Light snow</string>
+    <string name="weather_snow_moderate">Snow</string>
+    <string name="weather_snow_heavy">Heavy snow</string>
+    <string name="weather_snow_grains">Snow grains</string>
+    <string name="weather_rain_showers_slight">Light showers</string>
+    <string name="weather_rain_showers_moderate">Showers</string>
+    <string name="weather_rain_showers_violent">Violent showers</string>
+    <string name="weather_snow_showers_slight">Light snow showers</string>
+    <string name="weather_snow_showers_heavy">Snow showers</string>
+    <string name="weather_thunderstorm">Thunderstorm</string>
+    <string name="weather_thunderstorm_hail">Thunderstorm with hail</string>
+    <string name="weather_unknown">Conditions unavailable</string>
+
+    <!-- Search -->
+    <string name="search_title">Search</string>
+    <string name="search_placeholder">Search city or country…</string>
+    <string name="search_hint_short">Type at least 2 characters</string>
+    <string name="search_recent">Recent Searches</string>
+    <string name="search_popular">Popular Cities</string>
+    <string name="search_results">Results</string>
+    <string name="search_result_count">%1$d results</string>
+    <string name="search_no_recent">No recent searches yet</string>
+    <string name="search_searching">Searching…</string>
+    <string name="search_no_results_title">No cities found</string>
+    <string name="search_no_results_body">We couldn’t find anything for “%1$s”. Try a different spelling or a nearby city.</string>
+    <string name="search_error_title">Couldn’t search for cities</string>
+    <string name="search_offline_body">You need an internet connection to search cities.</string>
+    <string name="search_offline_cached_body">You’re offline. Recent searches are still available.</string>
+    <string name="search_clear_query">Clear search</string>
+    <string name="search_result_desc">%1$s, %2$s, %3$s</string>
+    <string name="search_recent_clear_title">Clear recent searches?</string>
+    <string name="search_recent_clear_body">Your search history on this device will be removed.</string>
+    <string name="search_attribution">City search by Open-Meteo</string>
+    <string name="search_pick_title">Choose your home city</string>
+    <string name="search_pick_body">This city appears on Home when location is off.</string>
+    <string name="search_pick_snackbar">%1$s is now your home city</string>
+    <string name="search_clear_recent_action">Clear recent searches</string>
+
+    <!-- City weather -->
+    <string name="city_save">Save city</string>
+    <string name="city_saved">Saved</string>
+    <string name="city_remove_saved">Remove from saved cities</string>
+    <string name="city_set_home">Set as home</string>
+    <string name="city_home_label">Home city</string>
+    <string name="city_added_snackbar">%1$s added to saved cities</string>
+    <string name="city_removed_snackbar">%1$s removed from saved cities</string>
+    <string name="city_home_snackbar">%1$s is now your home city</string>
+    <string name="city_not_found">We couldn’t open that city. Please choose it again.</string>
+    <string name="city_is_current_location">Current location</string>
+    <string name="city_device_location_badge">Device location</string>
+
+    <!-- Saved cities -->
+    <string name="saved_title">Saved Cities</string>
+    <string name="saved_subtitle">Your favourite places, one tap away.</string>
+    <string name="saved_empty_title">No saved cities yet</string>
+    <string name="saved_empty_body">Save cities you check often to see their weather instantly. Your saved cities stay separate from your device location.</string>
+    <string name="saved_add_city">Add City</string>
+    <string name="saved_find_city">Find a City</string>
+    <string name="saved_edit">Edit</string>
+    <string name="saved_done">Done</string>
+    <string name="saved_move_up">Move %1$s up</string>
+    <string name="saved_move_down">Move %1$s down</string>
+    <string name="saved_delete">Remove %1$s</string>
+    <string name="saved_item_desc">%1$s, %2$s, %3$s</string>
+    <string name="saved_remove_title">Remove %1$s?</string>
+    <string name="saved_remove_body">You can add it again anytime.</string>
+    <string name="saved_undo_removed">%1$s removed</string>
+    <string name="saved_updating">Updating saved cities…</string>
+    <string name="saved_partial_error">Some cities couldn’t update.</string>
+    <string name="saved_attribution">Weather data by Open-Meteo</string>
+    <string name="saved_loading_weather">Loading weather…</string>
+
+    <!-- Settings -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_units">Units</string>
+    <string name="settings_units_desc">Temperature and wind units across SKYORA.</string>
+    <string name="settings_celsius">°C · Celsius</string>
+    <string name="settings_fahrenheit">°F · Fahrenheit</string>
+    <string name="settings_celsius_short">Celsius</string>
+    <string name="settings_fahrenheit_short">Fahrenheit</string>
+    <string name="settings_location">Location</string>
+    <string name="settings_use_location">Use My Location</string>
+    <string name="settings_use_location_desc">Show weather for where you are when SKYORA opens.</string>
+    <string name="settings_home_city">Home City</string>
+    <string name="settings_home_city_desc">Used on Home when location is off.</string>
+    <string name="settings_permission">Location permission</string>
+    <string name="settings_permission_granted">Allowed</string>
+    <string name="settings_permission_denied">Not allowed</string>
+    <string name="settings_open_system">Open system settings</string>
+    <string name="settings_notifications">Notifications</string>
+    <string name="settings_coming_soon">Coming later</string>
+    <string name="settings_weather_alerts">Weather alerts</string>
+    <string name="settings_weather_alerts_desc">Severe weather notifications.</string>
+    <string name="settings_daily_forecast">Daily forecast</string>
+    <string name="settings_daily_forecast_desc">A morning summary for your home city.</string>
+    <string name="settings_notifications_note">Notifications aren’t available yet. These controls are a preview and don’t schedule anything.</string>
+    <string name="settings_data">Data &amp; privacy</string>
+    <string name="settings_attribution">Weather data by Open-Meteo</string>
+    <string name="settings_attribution_desc">Forecast and city-search data under open licences.</string>
+    <string name="settings_license">Licence &amp; attribution</string>
+    <string name="settings_terms">Open-Meteo terms of use</string>
+    <string name="settings_clear_cache">Clear cached weather</string>
+    <string name="settings_clear_cache_desc">Cached forecasts download again when needed.</string>
+    <string name="settings_clear_recents">Clear recent searches</string>
+    <string name="settings_clear_recents_desc">Removes your recent city searches.</string>
+    <string name="settings_reset_onboarding">Reset onboarding</string>
+    <string name="settings_reset_onboarding_desc">Show the welcome screens again.</string>
+    <string name="settings_about">About</string>
+    <string name="settings_about_skyora">About SKYORA</string>
+    <string name="settings_privacy">Privacy</string>
+    <string name="settings_version">Version %1$s</string>
+    <string name="settings_api_info">Powered by Open-Meteo’s free weather and geocoding APIs.</string>
+    <string name="settings_footer">Weather for a better tomorrow.</string>
+    <string name="settings_cache_cleared">Cached weather cleared</string>
+    <string name="settings_recents_cleared">Recent searches cleared</string>
+    <string name="settings_reset_confirmed">Onboarding reset</string>
+    <string name="settings_link_failed">Couldn’t open that link</string>
+    <string name="settings_location_denied_snackbar">Location permission denied. You can enable it in system settings.</string>
+    <string name="settings_location_unavailable_snackbar">Couldn’t get your location. Check that location services are on.</string>
+    <string name="settings_reset_confirm_title">Reset onboarding?</string>
+    <string name="settings_reset_confirm_body">You’ll see the welcome screens again. Your saved cities and settings stay intact.</string>
+    <string name="settings_notifications_disabled">Coming later</string>
+    <string name="settings_app_version_value">SKYORA %1$s</string>
+    <string name="settings_data_provider">Open-Meteo</string>
+
+    <string name="about_dialog_body">A calm, premium weather app built with Kotlin and Jetpack Compose.\n\nAccurate forecasts, a thoughtful design system and no clutter. Weather for a better tomorrow.</string>
+    <string name="privacy_dialog_body">SKYORA has no accounts, no analytics and no advertising. Your saved cities, preferences and last forecast are stored only on this device.\n\nWhen you use location, your coordinates are sent to Open-Meteo to request a forecast. Search terms go to Open-Meteo’s geocoding service. Location access is optional and can be revoked at any time in Android settings.</string>
+    <string name="attribution_dialog_body">Weather data by Open-Meteo (open-meteo.com), provided under the CC BY 4.0 licence. City search data is provided by Open-Meteo under CC BY-NC 4.0.\n\nThe free Open-Meteo API is intended for non-commercial use and has fair-use limits (currently around 10,000 calls per day). Review Open-Meteo’s terms and obtain an appropriate plan before any commercial release.\n\nSKYORA converts temperatures and wind speeds to your selected units, rounds values for display, and maps WMO weather codes to readable descriptions. No data is changed beyond those display transformations.</string>
+    <string name="attribution_dialog_title">Weather data &amp; licences</string>
+    <string name="privacy_dialog_title">Privacy</string>
+    <string name="about_dialog_title">About SKYORA</string>
+    <string name="link_open_failed">Couldn’t open that link</string>
+
+    <!-- Loading / errors -->
+    <string name="loading_weather">Getting the latest weather…</string>
+    <string name="loading_search">Searching cities…</string>
+    <string name="loading_location">Finding your location…</string>
+    <string name="loading_saved">Updating saved cities…</string>
+    <string name="error_offline_title">No internet connection</string>
+    <string name="error_offline_body">Connect to the internet and try again. Your last forecast will be waiting for you.</string>
+    <string name="error_timeout_title">The forecast is taking too long</string>
+    <string name="error_timeout_body">Open-Meteo didn’t respond in time. Please try again.</string>
+    <string name="error_server_title">Weather data is unavailable</string>
+    <string name="error_server_body">The weather service couldn’t return a forecast right now. Please try again in a moment.</string>
+    <string name="error_invalid_title">Something went wrong with the forecast</string>
+    <string name="error_invalid_body">We couldn’t read the latest weather data. Please try again.</string>
+    <string name="error_unknown_title">Something went wrong</string>
+    <string name="error_unknown_body">We couldn’t load the forecast. Please try again.</string>
+    <string name="error_location_denied_title">Location access is off</string>
+    <string name="error_location_denied_body">You can still check the weather for any city. Turn on location in settings if you’d like local conditions.</string>
+    <string name="error_location_unavailable_title">We couldn’t find your location</string>
+    <string name="error_location_unavailable_body">Check that location services are on, or choose a city manually.</string>
+    <string name="error_no_saved_title">No saved cities yet</string>
+    <string name="error_saved_refresh">Some saved cities couldn’t update</string>
+    <string name="error_last_updated">Last updated %1$s</string>
+    <string name="error_showing_cached">Showing saved forecast from %1$s</string>
+
+    <!-- Snackbars -->
+    <string name="snackbar_refresh_failed">Couldn’t refresh. Check your connection.</string>
+    <string name="snackbar_location_denied">Location permission denied. Enable it in system settings.</string>
+    <string name="snackbar_location_unavailable">Couldn’t get your location. Try again.</string>
+    <string name="snackbar_city_not_found">That city couldn’t be found.</string>
+    <string name="snackbar_saved_duplicate">That city is already saved.</string>
+    <string name="snackbar_city_saved">City saved</string>
+
+    <!-- Units -->
+    <string name="unit_celsius">°C</string>
+    <string name="unit_fahrenheit">°F</string>
+    <string name="unit_kmh">km/h</string>
+    <string name="unit_mph">mph</string>
+    <string name="unit_km">km</string>
+    <string name="unit_miles">mi</string>
+    <string name="temperature_degree_value">%1$d°</string>
+    <string name="temperature_value">%1$d°</string>
+
+    <!-- Content descriptions -->
+    <string name="cd_brand">SKYORA home</string>
+    <string name="cd_search">Search cities</string>
+    <string name="cd_settings">Open settings</string>
+    <string name="cd_use_location">Use current location</string>
+    <string name="cd_change_city">Change city</string>
+    <string name="cd_refresh">Refresh forecast</string>
+    <string name="cd_back">Back</string>
+    <string name="cd_weather_condition">%1$s</string>
+    <string name="cd_favorite_add">Save %1$s</string>
+    <string name="cd_favorite_remove">Remove %1$s from saved cities</string>
+    <string name="cd_hourly_item">%1$s, %2$s, %3$s</string>
+    <string name="cd_daily_item">%1$s, %2$s, high %3$s, low %4$s</string>
+    <string name="cd_current_conditions">%1$s, %2$s, feels like %3$s</string>
+    <string name="cd_saved_city">%1$s, %2$s, %3$s</string>
+    <string name="cd_open_city">Open %1$s</string>
+    <string name="cd_edit_cities">Edit saved cities</string>
+    <string name="cd_done_editing">Finish editing saved cities</string>
+    <string name="cd_chevron">Open</string>
+
+    <!-- Shared dialog / link labels -->
+    <string name="link_open_meteo">Open-Meteo</string>
+    <string name="link_cc_by">CC BY 4.0 licence</string>
+    <string name="link_cc_by_nc">CC BY-NC 4.0 licence</string>
+    <string name="link_terms">Terms of use</string>
+    <string name="dialog_geocoding_attribution">City search data by Open-Meteo, licensed under CC BY-NC 4.0.</string>
+    <string name="saved_reorder_hint">Use the arrows to reorder. Changes save automatically.</string>
+    <string name="permission_granted_body">You’re all set. Forecasts will follow you wherever you go.</string>
+    <string name="home_default_banner_action">Turn on location</string>
+    <string name="city_weather_attribution_desc">Weather data by Open-Meteo under CC BY 4.0. Open details.</string>
+    <string name="city_local_time">Local time · %1$s</string>
+</resources>
