@@ -184,7 +184,7 @@ fun WeatherHero(
                 resId = weatherIconRes(
                     condition = condition,
                     epochMillis = current.timeEpochMillis,
-                    zone = zone,
+                    zone = snapshot.zoneId(),
                     sunTimes = snapshot.sunTimes(),
                 ),
                 size = 62.dp,

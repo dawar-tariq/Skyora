@@ -28,6 +28,9 @@ import java.time.Instant
  */
 object SkyoraNotifier {
 
+    /** Free-form category string; the platform has no weather constant. */
+    private const val CATEGORY_WEATHER = "weather"
+
     const val ID_DAILY = 1001
     const val ID_RAIN = 1002
 
@@ -104,7 +107,7 @@ object SkyoraNotifier {
             .setSmallIcon(R.drawable.ic_stat_weather)
             .setLargeIcon(largeIcon(context, snapshot))
             .setContentIntent(contentIntent)
-            .setCategory(Notification.CATEGORY_WEATHER)
+            .setCategory(CATEGORY_WEATHER)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setColor(context.getColor(R.color.skyora_cyan))
             .setShowWhen(false)
