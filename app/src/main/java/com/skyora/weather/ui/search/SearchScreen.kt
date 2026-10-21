@@ -51,6 +51,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.skyora.weather.R
 import com.skyora.weather.core.util.SkyoraLinks
+import com.skyora.weather.core.util.rememberNowMillis
 import com.skyora.weather.di.AppContainer
 import com.skyora.weather.domain.model.DefaultLocations
 import com.skyora.weather.domain.model.Location
@@ -61,6 +62,7 @@ import com.skyora.weather.ui.designsystem.DialogLink
 import com.skyora.weather.ui.designsystem.ScreenHeader
 import com.skyora.weather.ui.designsystem.SkeletonBlock
 import com.skyora.weather.ui.designsystem.SkyoraBackdrop
+import com.skyora.weather.ui.designsystem.rememberAmbientSkyMoment
 import com.skyora.weather.ui.designsystem.SkyoraBanner
 import com.skyora.weather.ui.designsystem.SkyoraCard
 import com.skyora.weather.ui.designsystem.SkyoraConfirmDialog
@@ -69,7 +71,6 @@ import com.skyora.weather.ui.designsystem.SkyoraSectionHeader
 import com.skyora.weather.ui.designsystem.SkyoraStatePanel
 import com.skyora.weather.ui.designsystem.SkyoraTextButton
 import com.skyora.weather.ui.designsystem.WeatherErrorState
-import com.skyora.weather.ui.designsystem.WeatherVisualFamily
 import com.skyora.weather.ui.designsystem.screenBottomPadding
 import com.skyora.weather.ui.theme.SkyoraColors
 import com.skyora.weather.ui.theme.SkyoraRadius
@@ -135,8 +136,7 @@ fun SearchScreen(
             .background(SkyoraColors.Ink),
     ) {
         SkyoraBackdrop(
-            family = WeatherVisualFamily.CLEAR,
-            isDay = false,
+            moment = rememberAmbientSkyMoment(nowMillis = rememberNowMillis()),
             modifier = Modifier.fillMaxSize(),
         )
 

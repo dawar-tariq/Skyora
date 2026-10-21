@@ -11,6 +11,9 @@ import androidx.core.content.ContextCompat
 const val LOCATION_FINE = Manifest.permission.ACCESS_FINE_LOCATION
 const val LOCATION_COARSE = Manifest.permission.ACCESS_COARSE_LOCATION
 
+/** Android 13+ runtime permission for local weather notifications. */
+const val NOTIFICATIONS = Manifest.permission.POST_NOTIFICATIONS
+
 val LOCATION_PERMISSIONS: Array<String> = arrayOf(LOCATION_FINE, LOCATION_COARSE)
 
 fun Context.hasPermission(permission: String): Boolean =

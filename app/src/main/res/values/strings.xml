@@ -64,6 +64,22 @@
     <string name="onboarding_illustration_forecast">Illustration of a weather app card showing a sunny forecast</string>
     <string name="onboarding_illustration_location">Illustration of a location pin with gentle signal rings</string>
     <string name="onboarding_illustration_cities">Illustration of a list of saved cities</string>
+    <string name="onboarding_4_title">Never Miss the Weather</string>
+    <string name="onboarding_4_body">Turn on a daily summary and rain alerts now — you can change or turn them off any time in Settings.</string>
+    <string name="onboarding_badge_notifications">Optional</string>
+    <string name="onboarding_illustration_notifications">Illustration of a weather alert notification card</string>
+    <string name="onboarding_notif_daily_title">Daily forecast</string>
+    <string name="onboarding_notif_daily_body">One summary of today\'s weather at your chosen time.</string>
+    <string name="onboarding_notif_rain_title">Rain alerts</string>
+    <string name="onboarding_notif_rain_body">Tell me when rain is likely within the next few hours.</string>
+    <string name="onboarding_notif_earlier">Earlier delivery time</string>
+    <string name="onboarding_notif_later">Later delivery time</string>
+    <string name="onboarding_notif_time">Deliver at %1$s</string>
+    <string name="onboarding_notif_threshold">Alert at %1$d%% chance or higher</string>
+    <string name="onboarding_notif_city">Using %1$s</string>
+    <string name="onboarding_notif_denied">Notifications are blocked. SKYORA works without them; you can enable them later in Settings.</string>
+    <string name="onboarding_notif_local_note">Scheduled on this device from the same forecast you see in the app. These are local alerts, not push messages, and they are not official weather warnings.</string>
+    <string name="onboarding_notif_permission_rationale">Android will ask for notification permission. Weather alerts run locally and you can turn them off any time.</string>
 
     <!-- Location permission -->
     <string name="permission_title">Allow Location Access</string>

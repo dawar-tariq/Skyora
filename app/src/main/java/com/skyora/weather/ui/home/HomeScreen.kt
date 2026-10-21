@@ -63,6 +63,7 @@ import com.skyora.weather.domain.model.WeatherError
 import com.skyora.weather.ui.designsystem.AttributionDialog
 import com.skyora.weather.ui.designsystem.BannerTone
 import com.skyora.weather.ui.designsystem.SkyoraBackdrop
+import com.skyora.weather.ui.designsystem.rememberSkyMoment
 import com.skyora.weather.ui.designsystem.SkyoraBanner
 import com.skyora.weather.ui.designsystem.SkyoraIconButton
 import com.skyora.weather.ui.designsystem.SkyoraLoadingRow
@@ -78,9 +79,7 @@ import com.skyora.weather.ui.theme.SkyoraTextStyles
 import com.skyora.weather.ui.weather.WeatherDetailsContent
 import com.skyora.weather.ui.weather.WeatherLoadingSkeleton
 import com.skyora.weather.ui.weather.CachedWeatherBanner
-import com.skyora.weather.ui.designsystem.WeatherVisualFamily
 import com.skyora.weather.ui.designsystem.screenBottomPadding
-import com.skyora.weather.ui.designsystem.visualFamily
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
@@ -161,8 +160,11 @@ fun HomeScreen(
         Instant.ofEpochMilli(nowMillis).atZone(zone).toLocalDateTime()
     }
 
-    val family = state.snapshot?.currentCondition()?.visualFamily() ?: WeatherVisualFamily.CLEAR
-    val isDay = state.snapshot?.current?.isDay ?: false
+    val skyMoment = rememberSkyMoment(
+        snapshot = state.snapshot,
+        nowMillis = nowMillis,
+        fallbackZone = state.location.timezone?.let { runCatching { ZoneId.of(it) }.getOrNull() },
+    )
     val hasLocationPermission = context.hasAnyLocationPermission()
     val showSetupBanner = state.automaticLocationEnabled &&
         !state.location.isDeviceLocation &&
@@ -186,8 +188,7 @@ fun HomeScreen(
             .background(SkyoraColors.Ink),
     ) {
         SkyoraBackdrop(
-            family = family,
-            isDay = isDay,
+            moment = skyMoment,
             modifier = Modifier.fillMaxSize(),
         )
 

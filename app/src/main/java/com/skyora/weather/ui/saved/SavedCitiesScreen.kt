@@ -48,6 +48,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.skyora.weather.R
 import com.skyora.weather.core.util.formatTemperature
+import com.skyora.weather.core.util.rememberNowMillis
 import com.skyora.weather.di.AppContainer
 import com.skyora.weather.domain.model.MoveDirection
 import com.skyora.weather.domain.model.TemperatureUnit
@@ -57,6 +58,7 @@ import com.skyora.weather.ui.designsystem.EmptyCitiesArt
 import com.skyora.weather.ui.designsystem.ScreenHeader
 import com.skyora.weather.ui.designsystem.SkeletonBlock
 import com.skyora.weather.ui.designsystem.SkyoraBackdrop
+import com.skyora.weather.ui.designsystem.rememberSkyMoment
 import com.skyora.weather.ui.designsystem.SkyoraBanner
 import com.skyora.weather.ui.designsystem.SkyoraCard
 import com.skyora.weather.ui.designsystem.SkyoraConfirmDialog
@@ -66,12 +68,12 @@ import com.skyora.weather.ui.designsystem.SkyoraSnackbarHost
 import com.skyora.weather.ui.designsystem.SkyoraTextButton
 import com.skyora.weather.ui.designsystem.WeatherIcon
 import com.skyora.weather.ui.designsystem.weatherIconRes
-import com.skyora.weather.ui.designsystem.WeatherVisualFamily
 import com.skyora.weather.ui.designsystem.screenBottomPadding
 import com.skyora.weather.ui.theme.LocalBottomBarInset
 import com.skyora.weather.ui.theme.SkyoraColors
 import com.skyora.weather.ui.theme.SkyoraSpacing
 import com.skyora.weather.ui.weather.ShortConditionLabel
+import java.time.ZoneId
 
 /**
  * Saved cities are a user-owned list: add, remove (with undo), reorder and open.
@@ -112,14 +114,20 @@ fun SavedCitiesScreen(
         }
     }
 
+    val nowMillis = rememberNowMillis()
+
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(SkyoraColors.Ink),
     ) {
         SkyoraBackdrop(
-            family = WeatherVisualFamily.CLEAR,
-            isDay = false,
+            moment = rememberSkyMoment(
+                snapshot = state.rows.firstOrNull { it.snapshot != null }?.snapshot,
+                nowMillis = nowMillis,
+                fallbackZone = state.rows.firstOrNull()?.saved?.location?.timezone
+                    ?.let { runCatching { ZoneId.of(it) }.getOrNull() },
+            ),
             modifier = Modifier.fillMaxSize(),
         )
 
