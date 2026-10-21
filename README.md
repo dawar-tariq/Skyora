@@ -255,13 +255,14 @@ echo "sdk.dir=/path/to/Android/Sdk" > local.properties
 
 | Run | Result |
 |---|---|
+| [39616305909](https://github.com/dawar-tariq/Skyora/actions/runs/39616305909) — in-context widget nudge (round 5) | `testDebugUnitTest` **107 passed, 0 failed**, `assembleDebug` **success**, debug APK uploaded |
 | [39605163444](https://github.com/dawar-tariq/Skyora/actions/runs/39605163444) — launcher icon, celestial rendering, widget reliability | `testDebugUnitTest` **85 passed, 0 failed**, `assembleDebug` **success**, debug APK uploaded |
 
 Round-2 issues found by the real build and fixed (in this order): duplicate `action_*` strings, unescaped apostrophes in two notification strings (aapt "invalid unicode escape sequence"), missing `Box`/`matchParentSize` imports in `Brand.kt`, missing dialog/icon-button imports in `SettingsScreen.kt`, an out-of-scope `zone` in `WeatherHero`, and `Notification.CATEGORY_WEATHER`, which does not exist on the platform.
 
 Static checks performed while the SDK was unavailable locally:
 
-* All 96 Kotlin files pass a brace/parenthesis/bracket balance check (string- and comment-aware).
+* All 99 Kotlin files pass a brace/parenthesis/bracket balance check (string- and comment-aware).
 * Every `R.string`/`R.color`/`R.drawable`/`R.layout`/`R.id`/`R.xml` reference resolves, and every `@drawable|color|string|style` reference inside `res/` resolves; all resource XML parses.
 * Every project-internal import resolves to a declaration in that package; every `Icons.Outlined.*` use has a matching import.
 * All 20 weather vectors were rasterised (resvg) and inspected: distinct day sun, night crescent, sun/moon-behind-cloud, rain, drizzle, snow, sleet, storm with lightning, hail, fog and fallback artwork, with consistent stroke and scale.
