@@ -10,11 +10,11 @@ A native Android weather app built with Kotlin, Jetpack Compose and Material 3. 
 
 | | |
 |---|---|
-| Source | 80 Kotlin sources (74 app + 6 test), 8 screens, 397 strings, 20 weather-icon vectors |
-| Android build | **Verified on GitHub Actions** (ubuntu-latest, JDK 17, Android SDK 35): `testDebugUnitTest` and `assembleDebug` both pass (run [39571962863](https://github.com/dawar-tariq/Skyora/actions/runs/39571962863)). |
+| Source | 96 Kotlin sources (87 app + 9 test), 9 screens, 466 strings, 20 weather-icon vectors |
+| Android build | **Verified on GitHub Actions** (ubuntu-latest, JDK 17, Android SDK 35): `testDebugUnitTest` and `assembleDebug` both pass (run [39605163444](https://github.com/dawar-tariq/Skyora/actions/runs/39605163444)). |
 | APK | Built by CI and published to [Releases](https://github.com/dawar-tariq/Skyora/releases/latest) (debug-signed, installable). |
-| Unit tests | **51 JVM tests, 0 failures**, executed by CI (`unit-tests` commit status carries the count). |
-| Widgets | 2x2 compact and 4x2 forecast home-screen widgets with per-widget city selection. |
+| Unit tests | **85 JVM tests, 0 failures**, executed by CI (`unit-tests` commit status carries the count). |
+| Widgets | 2x2 compact and 4x2 forecast home-screen widgets with per-widget city selection, 30-minute background refresh and a built-in reliability page. |
 | Notifications | Local WorkManager-scheduled daily summary and rain alerts (not remote push). Severe-weather alerts are explicitly unavailable rather than fabricated. |
 
 ## Round 2 changes at a glance
@@ -30,6 +30,23 @@ A native Android weather app built with Kotlin, Jetpack Compose and Material 3. 
 | Settings | `ui/settings/SettingsScreen.kt`, `SettingsViewModel.kt`, `ui/designsystem/Dialogs.kt` (`extraContent`), `Controls.kt` (composable segment labels), `core/util/ContextExt.kt` |
 | Plumbing | `AndroidManifest.xml` (widget receivers/activity, `POST_NOTIFICATIONS`), `di/AppContainer.kt`, `SkyoraApplication.kt`, `MainActivity.kt` (widget/notification tap → city), `ui/navigation/SkyoraApp.kt`, `data/repository/WeatherRepositoryImpl.kt` (`onSnapshotStored`), `data/local/PreferencesRepositoryImpl.kt`, `domain/model/UserPreferences.kt`, `domain/repository/Repositories.kt`, `gradle/libs.versions.toml` + `app/build.gradle.kts` (WorkManager 2.9.1) |
 | Tests | `app/src/test/.../SkyIconsTest.kt`, `RainAlertPolicyTest.kt`, `NotificationSchedulerTest.kt`, extended `ForecastParsingTest.kt` |
+
+## Round 3 changes at a glance
+
+The device screenshots showed a clear afternoon rendered with a midnight sky, a launcher icon that did not match the supplied artwork, and a widget that only refreshed after the app was opened. This round fixes those and the layout issues visible around them.
+
+| Area | What changed | Files |
+|---|---|---|
+| Launcher icon | Every adaptive, legacy, round, themed and splash asset is regenerated **from the supplied artwork** by one script; the source PNG is checked in. | `art/skyora-icon-source.png`, `tools/generate_launcher_icons.py`, `res/drawable-*/ic_launcher_*.png`, `res/mipmap-*/ic_launcher*.png`, `values/themes.xml` |
+| Day/night backgrounds | A resolver decides the sky from the city's zone, the item's timestamp and that day's sunrise/sunset; separate day, night and horizon palettes | `domain/model/SkyMoment.kt`, `ui/designsystem/{SkyPalettes,SkyMomentProvider,WeatherBackdrop}.kt`, every screen |
+| Celestial rendering | Sun and moon rebuilt with layered bloom and concentric stops (no hard halo ring, no specular "ball") | `ui/designsystem/WeatherBackdrop.kt` |
+| Home layout | Condition printed once instead of twice; hero/insets/spacing unchanged otherwise | `ui/weather/WeatherSections.kt` |
+| Widgets | Navy plates on every treatment; per-phase accent; no muddy warm-grey plate | `res/drawable/widget_background*.xml` |
+| Background refresh | 30-minute periodic work, `UPDATE` policy so existing installs pick up the new interval, `APPEND_OR_REPLACE` so bursts cannot cancel an in-flight refresh, and a journal of the last attempt/success | `widget/WidgetUpdater.kt`, `work/WidgetRefreshWorker.kt`, `widget/WidgetRefreshStatusStore.kt`, `data/local/SkyoraDataStores.kt` |
+| Widget reliability page | Last success, last outcome, WorkManager state, battery/background restriction status (only what Android exposes), widget count, per-OEM guidance, manual refresh, dismissible | `ui/widgets/WidgetReliability{,ViewModel}.kt`, `domain/widget/WidgetRefreshStatus.kt`, `ui/settings/SettingsScreen.kt`, `ui/navigation/SkyoraApp.kt` |
+| Notification time zones | The chosen delivery time is resolved in the **notification city's** zone and rescheduled when that city changes | `notifications/NotificationScheduler.kt`, `work/DailyForecastWorker.kt`, `di/AppContainer.kt` |
+| Onboarding | Fourth slide carries the real notification opt-in (daily time, rain threshold, permission, blocked state) | `ui/onboarding/OnboardingScreen.kt`, `OnboardingViewModel.kt` |
+| Tests | `SkyMomentTest`, `SkyBackdropContrastTest`, `WidgetRefreshHealthTest`, cross-zone cases in `NotificationSchedulerTest` | `app/src/test/...` |
 
 ## Get the app
 
@@ -62,7 +79,9 @@ All screens are edge-to-edge (`enableEdgeToEdge` + insets), scroll-safe under th
 
 ### Brand assets
 
-The launcher icon is the supplied crescent-and-cloud mark, not a re-drawn substitute: a full-bleed adaptive foreground (288/432/576 px for xhdpi/xxhdpi/xxxhdpi) inside a deep-navy `ic_launcher_background` layer with the mark kept inside the 66 dp safe zone, plus legacy mipmaps (48–192 px, square and round) for launchers without adaptive icons and a monochrome layer for themed icons. The same artwork is exported as `ic_brand_mark` (64–256 px) for the in-app logo, widget header and notification large icon, and as `ic_splash_logo` for the Android 12 splash screen. No text is baked into any icon, and the old vector launcher/splash drawables were deleted so nothing stale can be picked up.
+The launcher icon is the supplied crescent-and-cloud mark, not a re-drawn substitute, and it is generated rather than hand-maintained: `tools/generate_launcher_icons.py` reads `art/skyora-icon-source.png` and writes every density of the adaptive foreground/background, the themed monochrome layer, the legacy square/round mipmaps (48–192 px) and the Android 12 splash icon.
+
+Splitting the supplied artwork is the non-obvious part. A luminance matte clipped the moon's bloom into a visible square halo, and un-compositing blew out the highlights; the script instead crops the art with its bloom and fades the foreground's edge over the flat plate, so the layers rebuild the source to within JPEG noise and no glow is lost. Foreground and background are always cropped together so the bloom stays aligned with the moon under every mask. The splash window uses those same layers, so the system splash, the in-app splash and the launcher entry show one image, and no icon background colour is set (it would draw a disc behind the artwork).
 
 ### Weather icons: day/night is computed, never guessed
 
@@ -84,13 +103,15 @@ Clear, mainly-clear, partly-cloudy and rain-shower artwork therefore flips at th
 | **SKYORA · Current** | 2x2 (resizable) | brand mark, city, current temperature, condition, day/night-aware icon, high/low when the cell is tall enough, "Updated … ago" |
 | **SKYORA · Forecast** | 4x2 (resizable) | city, temperature, condition, high/low, icon, next 3–4 hours (each with its own day/night icon and local time), "Updated … ago" |
 
-Both are `RemoteViews` layouts (LinearLayout/TextView/ImageView only) built by `widget/WidgetRenderer.kt` from the **existing** repository — the widgets never call the network directly. Data comes from the cache when present and from a normal repository fetch otherwise, so a widget and the app can never disagree. Each widget stores its own city (`WidgetPreferences`) chosen in `WidgetConfigActivity` (the `android:configure` activity); cancelling removes the widget. The four refresh triggers are: widget placed/resized, any successful app fetch, a change of selected city/temperature unit, and a 60-minute periodic safety net (`WorkManager`, all coalesced under unique work names). Deleting the last widget cancels the periodic job, and re-placing one re-arms it. Both widgets ship a picker preview (`previewLayout` on Android 12+, `previewImage` below).
+Both are `RemoteViews` layouts (LinearLayout/TextView/ImageView only) built by `widget/WidgetRenderer.kt` from the **existing** repository — the widgets never call the network directly. Data comes from the cache when present and from a normal repository fetch otherwise, so a widget and the app can never disagree. Each widget stores its own city (`WidgetPreferences`) chosen in `WidgetConfigActivity` (the `android:configure` activity); cancelling removes the widget. The four refresh triggers are: widget placed/resized, any successful app fetch, a change of selected city/temperature unit, and a 30-minute periodic safety net (`WorkManager`, all coalesced under unique work names, `UPDATE` policy so an install picks up a changed interval). Deleting the last widget cancels the periodic job, and re-placing one re-arms it. Both widgets ship a picker preview (`previewLayout` on Android 12+, `previewImage` below).
+
+**Widget reliability** (`Settings › Widgets › Widget reliability`) exists because "the widget only updates when I open the app" is the single most common weather-widget complaint, and the honest answer depends on the device. It reports the last successful refresh and last outcome from a journal that survives clearing the cache, the WorkManager state of the periodic job, the requested interval, whether the app is exempt from battery optimisation, whether background usage is restricted (Android 9+) and how many widgets are placed. Guidance is shown for Xiaomi/Redmi/POCO, Huawei/Honor, Oppo/Realme/OnePlus, Vivo/iQOO and Samsung, with a button that opens the system battery-settings list — never a direct exemption request, and nothing here is required for the app to work. The page states explicitly that Android controls the exact timing and that some restrictions cannot be detected.
 
 ### Notifications (local schedule, not push)
 
 `notifications/NotificationScheduler.kt` owns two WorkManager schedules, each under a unique name, so changing a setting replaces instead of duplicating work:
 
-* **Daily summary** — one-time work re-armed after each run at the user's chosen wall-clock time (`delayUntil` handles "already passed today"), network-constrained, re-read from preferences at run time. Shows today's condition, high/low and the correct icon for the city in use; dedupe key is `location|<date>`.
+* **Daily summary** — one-time work re-armed after each run at the user's chosen wall-clock time **in the notification city's zone** (`delayUntil` handles "already passed today" and DST), network-constrained, re-read from preferences at run time, and rescheduled when the notification city changes. Shows today's condition, high/low and the correct icon for the city in use; dedupe key is `location|<date>`.
 * **Rain alerts** — 30-minute periodic work (WorkManager's practical minimum for this pattern). It reads the `precipitation_probability` of upcoming hours, compares it with the configured 40/60/80 % threshold inside the configured 6-hour horizon, and posts **at most one alert per forecast hour** (`location|epochHour`). It never infers rain from the weather code.
 * **Severe weather** — **not implemented and not faked.** No official alert feed is integrated, so the Settings row states that instead of offering a switch. There is no Firebase, no server and no push token anywhere in the project.
 
@@ -215,19 +236,19 @@ echo "sdk.dir=/path/to/Android/Sdk" > local.properties
 
 | Run | Result |
 |---|---|
-| [39571962863](https://github.com/dawar-tariq/Skyora/actions/runs/39571962863) — head of this branch | `testDebugUnitTest` **51 passed, 0 failed**, `assembleDebug` **success**, debug APK uploaded |
+| [39605163444](https://github.com/dawar-tariq/Skyora/actions/runs/39605163444) — launcher icon, celestial rendering, widget reliability | `testDebugUnitTest` **85 passed, 0 failed**, `assembleDebug` **success**, debug APK uploaded |
 
 Round-2 issues found by the real build and fixed (in this order): duplicate `action_*` strings, unescaped apostrophes in two notification strings (aapt "invalid unicode escape sequence"), missing `Box`/`matchParentSize` imports in `Brand.kt`, missing dialog/icon-button imports in `SettingsScreen.kt`, an out-of-scope `zone` in `WeatherHero`, and `Notification.CATEGORY_WEATHER`, which does not exist on the platform.
 
 Static checks performed while the SDK was unavailable locally:
 
-* All 80 Kotlin files pass a brace/parenthesis/bracket balance check (string- and comment-aware).
+* All 96 Kotlin files pass a brace/parenthesis/bracket balance check (string- and comment-aware).
 * Every `R.string`/`R.color`/`R.drawable`/`R.layout`/`R.id`/`R.xml` reference resolves, and every `@drawable|color|string|style` reference inside `res/` resolves; all resource XML parses.
 * Every project-internal import resolves to a declaration in that package; every `Icons.Outlined.*` use has a matching import.
 * All 20 weather vectors were rasterised (resvg) and inspected: distinct day sun, night crescent, sun/moon-behind-cloud, rain, drizzle, snow, sleet, storm with lightning, hail, fog and fallback artwork, with consistent stroke and scale.
 * Widget layouts were audited for `RemoteViews` compatibility (no `Space`, `View`, or `ConstraintLayout`); the compact widget's optional line is dropped by measured width **and** height instead of clipping.
 
-What is **not** verified: no emulator/device run and no screenshot or instrumentation tests in this environment. Widget rendering, notification delivery timing and the installed launcher icon have therefore not been visually exercised on hardware; they are compiled and CI-built, not device-confirmed.
+What is **not** verified: no emulator/device run and no screenshot or instrumentation tests in this environment. Widget rendering, notification delivery timing, the installed launcher icon and OEM background behaviour have therefore not been visually or behaviourally exercised on hardware; they are compiled and CI-built, not device-confirmed. In particular, "refreshes without opening the app", Doze behaviour and MIUI/HyperOS battery behaviour need a device check — the reliability page was built so the user can see what actually happened instead of guessing.
 
 ## Limitations and next steps
 

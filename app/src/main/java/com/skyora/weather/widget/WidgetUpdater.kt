@@ -96,9 +96,12 @@ object WidgetUpdater {
         )
             .setConstraints(network)
             .build()
+        // UPDATE, not KEEP: KEEP would leave an existing install running the
+        // interval it was first given (60 min) forever, silently ignoring the
+        // shorter interval this build asks for.
         WorkManager.getInstance(context).enqueueUniquePeriodicWork(
             UNIQUE_PERIODIC,
-            ExistingPeriodicWorkPolicy.KEEP,
+            ExistingPeriodicWorkPolicy.UPDATE,
             request,
         )
     }
