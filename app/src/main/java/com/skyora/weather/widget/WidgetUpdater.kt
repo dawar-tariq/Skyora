@@ -29,9 +29,14 @@ import java.util.concurrent.TimeUnit
  */
 object WidgetUpdater {
 
-    private const val UNIQUE_REFRESH = "skyora_widget_refresh"
-    private const val UNIQUE_PERIODIC = "skyora_widget_periodic"
-    private const val PERIOD_MINUTES = 60L
+    const val UNIQUE_REFRESH = "skyora_widget_refresh"
+    const val UNIQUE_PERIODIC = "skyora_widget_periodic"
+    /**
+     * 30 minutes: the shortest sane balance for a weather widget. WorkManager
+     * batches it with other jobs and honours Doze, so this is a *request*, not
+     * a schedule the app can promise.
+     */
+    const val PERIOD_MINUTES = 30L
 
     /**
      * Set while [com.skyora.weather.work.WidgetRefreshWorker] is fetching and
@@ -67,9 +72,12 @@ object WidgetUpdater {
             .setConstraints(network)
             .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 30, TimeUnit.SECONDS)
             .build()
+        // APPEND_OR_REPLACE rather than REPLACE: a burst of triggers must not
+        // cancel a refresh that is already fetching (which would leave widgets
+        // on stale data until the next trigger).
         WorkManager.getInstance(context).enqueueUniqueWork(
             UNIQUE_REFRESH,
-            ExistingWorkPolicy.REPLACE,
+            ExistingWorkPolicy.APPEND_OR_REPLACE,
             request,
         )
     }
@@ -88,9 +96,12 @@ object WidgetUpdater {
         )
             .setConstraints(network)
             .build()
+        // UPDATE, not KEEP: KEEP would leave an existing install running the
+        // interval it was first given (60 min) forever, silently ignoring the
+        // shorter interval this build asks for.
         WorkManager.getInstance(context).enqueueUniquePeriodicWork(
             UNIQUE_PERIODIC,
-            ExistingPeriodicWorkPolicy.KEEP,
+            ExistingPeriodicWorkPolicy.UPDATE,
             request,
         )
     }

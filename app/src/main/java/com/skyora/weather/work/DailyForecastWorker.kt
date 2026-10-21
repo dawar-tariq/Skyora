@@ -42,7 +42,7 @@ class DailyForecastWorker(
         val dayKey = "${snapshot.location.id}|${LocalDate.now(zone)}"
         val dedupe = NotificationDedupeStore(applicationContext)
         if (!dedupe.shouldSendDaily(dayKey)) {
-            NotificationScheduler.scheduleDaily(applicationContext, settings)
+            NotificationScheduler.scheduleDaily(applicationContext, settings, zone)
             return Result.success()
         }
 
@@ -55,7 +55,8 @@ class DailyForecastWorker(
             SkyoraNotifier.dailyForecast(applicationContext, snapshot, prefs.temperatureUnit),
         )
         dedupe.markDailySent(dayKey)
-        NotificationScheduler.scheduleDaily(applicationContext, settings)
+        // Re-arm tomorrow at the same wall-clock time in the forecast's zone.
+        NotificationScheduler.scheduleDaily(applicationContext, settings, zone)
         return Result.success()
     }
 

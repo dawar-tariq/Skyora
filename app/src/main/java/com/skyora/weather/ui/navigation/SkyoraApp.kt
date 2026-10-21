@@ -38,6 +38,7 @@ import com.skyora.weather.ui.search.SearchScreen
 import com.skyora.weather.ui.settings.SettingsScreen
 import com.skyora.weather.ui.splash.SplashScreen
 import com.skyora.weather.ui.splash.StartDestination
+import com.skyora.weather.ui.widgets.WidgetReliabilityScreen
 import com.skyora.weather.ui.theme.LocalBottomBarInset
 import com.skyora.weather.ui.theme.SkyoraColors
 
@@ -52,6 +53,7 @@ object SkyoraRoutes {
     const val SEARCH_PICK_SETUP = "search_pick_setup"
     const val SAVED = "saved"
     const val SETTINGS = "settings"
+    const val WIDGET_RELIABILITY = "widget_reliability"
     const val CITY = "city/{payload}"
 
     fun city(location: Location): String = "city/${location.encodeForRoute()}"
@@ -213,12 +215,24 @@ fun SkyoraApp(
                                 launchSingleTop = true
                             }
                         },
+                        onOpenWidgetReliability = {
+                            navController.navigate(SkyoraRoutes.WIDGET_RELIABILITY) {
+                                launchSingleTop = true
+                            }
+                        },
                         onRestartOnboarding = {
                             navController.navigate(SkyoraRoutes.SPLASH) {
                                 popUpTo(SkyoraRoutes.HOME) { inclusive = true }
                                 launchSingleTop = true
                             }
                         },
+                    )
+                }
+
+                composable(SkyoraRoutes.WIDGET_RELIABILITY) {
+                    WidgetReliabilityScreen(
+                        container = container,
+                        onBack = { navController.popBackStack() },
                     )
                 }
 

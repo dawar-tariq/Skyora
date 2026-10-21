@@ -11,10 +11,16 @@
         <item name="android:colorAccent">@color/skyora_cyan</item>
     </style>
 
+    <!--
+      Android 12+ splash. Uses the same moon-and-cloud layers as the adaptive
+      launcher icon, so the system splash, the app's own splash screen and the
+      launcher entry all show one piece of artwork. No icon background colour:
+      the navy window background already provides it, and setting one would put
+      a visible disc behind the artwork.
+    -->
     <style name="Theme.Skyora.Splash" parent="Theme.SplashScreen">
         <item name="windowSplashScreenBackground">@color/skyora_ink</item>
-        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_logo</item>
-        <item name="windowSplashScreenIconBackgroundColor">@color/skyora_ink</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
         <item name="postSplashScreenTheme">@style/Theme.Skyora</item>
     </style>
 

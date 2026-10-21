@@ -32,6 +32,7 @@ class WidgetRefreshWorker(
         val container = app.container
         val manager = AppWidgetManager.getInstance(applicationContext) ?: return Result.success()
         val widgetPrefs = WidgetPreferences(applicationContext, container.json)
+        val statusStore = container.widgetRefreshStatusStore
 
         val compactIds = manager.getAppWidgetIds(
             ComponentName(applicationContext, CompactWeatherWidgetProvider::class.java),
@@ -72,6 +73,14 @@ class WidgetRefreshWorker(
             }
         } finally {
             WidgetUpdater.endInternalRefresh()
+        }
+
+        // Journal the outcome so Settings can show whether the background job
+        // is actually running, not just whether it was scheduled.
+        if (hadNetworkFailure) {
+            statusStore.recordFailure(System.currentTimeMillis())
+        } else {
+            statusStore.recordSuccess(System.currentTimeMillis())
         }
 
         // Retry with backoff only when a fetch actually failed; cached data was

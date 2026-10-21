@@ -8,10 +8,12 @@ import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
+import com.skyora.weather.domain.model.Location
 import com.skyora.weather.domain.model.NotificationSettings
 import com.skyora.weather.work.DailyForecastWorker
 import com.skyora.weather.work.RainCheckWorker
 import java.time.Duration
+import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.util.concurrent.TimeUnit
 
@@ -36,9 +38,19 @@ object NotificationScheduler {
     private const val UNIQUE_DAILY = "skyora_daily_forecast"
     private const val UNIQUE_RAIN = "skyora_rain_check"
 
-    fun sync(context: Context, settings: NotificationSettings) {
+    /**
+     * [zone] is the *city's* zone, so "07:00" means 07:00 where the forecast
+     * applies — not 07:00 on the phone, which for a saved city abroad would
+     * deliver yesterday's or tomorrow's summary. Falls back to the device zone
+     * when the city's zone is not known yet.
+     */
+    fun sync(
+        context: Context,
+        settings: NotificationSettings,
+        zone: ZoneId = ZoneId.systemDefault(),
+    ) {
         if (settings.dailyForecastEnabled) {
-            scheduleDaily(context, settings)
+            scheduleDaily(context, settings, zone)
         } else {
             WorkManager.getInstance(context).cancelUniqueWork(UNIQUE_DAILY)
         }
@@ -50,11 +62,18 @@ object NotificationScheduler {
         }
     }
 
-    /** Enqueues the next daily run at the user's chosen local time. */
-    fun scheduleDaily(context: Context, settings: NotificationSettings) {
+    /** Enqueues the next daily run at the user's chosen time in the city's zone. */
+    fun scheduleDaily(
+        context: Context,
+        settings: NotificationSettings,
+        zone: ZoneId = ZoneId.systemDefault(),
+    ) {
         if (!settings.dailyForecastEnabled) return
         val work = OneTimeWorkRequestBuilder<DailyForecastWorker>()
-            .setInitialDelay(delayUntil(settings.dailyForecastMinutes), TimeUnit.MILLISECONDS)
+            .setInitialDelay(
+                delayUntil(settings.dailyForecastMinutes, ZonedDateTime.now(zone)),
+                TimeUnit.MILLISECONDS,
+            )
             .setConstraints(
                 Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build(),
             )
@@ -79,7 +98,12 @@ object NotificationScheduler {
         )
     }
 
-    /** Milliseconds until the next occurrence of [minutesAfterMidnight]. */
+    /**
+     * Milliseconds until the next occurrence of [minutesAfterMidnight] in
+     * [now]'s zone. DST-safe: the target is built as a wall-clock time and then
+     * resolved to an instant, so a 07:00 delivery stays 07:00 after a clock
+     * change instead of drifting by an hour.
+     */
     fun delayUntil(minutesAfterMidnight: Int, now: ZonedDateTime = ZonedDateTime.now()): Long {
         val target = now.toLocalDate()
             .atTime(minutesAfterMidnight / 60, minutesAfterMidnight % 60)
@@ -87,4 +111,8 @@ object NotificationScheduler {
             .let { if (it.isAfter(now)) it else it.plusDays(1) }
         return Duration.between(now, target).toMillis().coerceAtLeast(0L)
     }
+
+    /** The zone a saved city's schedules should follow, if it is known. */
+    fun zoneFor(location: Location?): ZoneId? = location?.timezone
+        ?.let { runCatching { ZoneId.of(it) }.getOrNull() }
 }

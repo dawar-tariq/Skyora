@@ -1,14 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Widget plate - sunrise/sunset variant: a restrained warm top edge. -->
+<!--
+  Widget plate - sunrise/sunset variant.
+  Navy base, like every other plate: a warm-grey top stop made the widget look
+  muddy on a dark wallpaper. Only the border carries the sunset colour.
+-->
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="rectangle">
     <gradient
         android:angle="315"
-        android:startColor="#4A3B45"
-        android:centerColor="#1D2333"
+        android:startColor="#243352"
+        android:centerColor="#101D31"
         android:endColor="#050A15" />
     <corners android:radius="24dp" />
     <stroke
         android:width="1dp"
-        android:color="#66FFC48A" />
+        android:color="#4DFFC48A" />
 </shape>

@@ -24,6 +24,7 @@ import com.skyora.weather.domain.repository.WeatherRepository
 import com.skyora.weather.notifications.NotificationChannels
 import com.skyora.weather.notifications.NotificationScheduler
 import com.skyora.weather.widget.WidgetPreferences
+import com.skyora.weather.widget.WidgetRefreshStatusStore
 import com.skyora.weather.widget.WidgetUpdater
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -46,6 +47,9 @@ import java.util.concurrent.TimeUnit
  */
 class AppContainer(context: Context) {
     private val appContext = context.applicationContext
+
+    /** Application context, for components that need one without the container. */
+    val context: Context get() = appContext
 
     val clock: Clock = Clock.systemUTC()
 
@@ -141,6 +145,11 @@ class AppContainer(context: Context) {
 
     val widgetPreferences: WidgetPreferences by lazy { WidgetPreferences(appContext, json) }
 
+    /** Journal read by the Widget reliability screen. */
+    val widgetRefreshStatusStore: WidgetRefreshStatusStore by lazy {
+        WidgetRefreshStatusStore.create(appContext)
+    }
+
     val appVersionName: String = BuildConfig.VERSION_NAME
 
     /**
@@ -164,9 +173,15 @@ class AppContainer(context: Context) {
         // Notification work follows the notification settings only.
         applicationScope.launch {
             preferencesRepository.preferences
-                .map { it.notifications }
+                .map { prefs -> prefs.notifications to prefs.selectedLocation }
                 .distinctUntilChanged()
-                .collect { settings -> notificationScheduler.sync(appContext, settings) }
+                .collect { (settings, selected) ->
+                    // A city switch must move the delivery time to that city's
+                    // clock, so the zone is part of this key too.
+                    val zone = NotificationScheduler.zoneFor(settings.notificationLocation ?: selected)
+                        ?: java.time.ZoneId.systemDefault()
+                    notificationScheduler.sync(appContext, settings, zone)
+                }
         }
     }
 }

@@ -10,6 +10,7 @@
             <gradient android:type="linear" android:startX="50" android:startY="20" android:endX="50" android:endY="94" android:startColor="#F6FDFF" android:endColor="#8AD8F7" />
         </aapt:attr>
     </path>
-    <path android:pathData="M18.08,37.08 a2.1,2.1 0 1,0 4.2,0 a2.1,2.1 0 1,0 -4.2,0 Z" android:fillColor="#EAFBFF" android:fillAlpha="0.9" />
-    <path android:pathData="M24.14,20.7 a1.5,1.5 0 1,0 3.0,0 a1.5,1.5 0 1,0 -3.0,0 Z" android:fillColor="#EAFBFF" android:fillAlpha="0.7" />
+    <!-- Sparkles, not dots: a 1dp dot collapses to a speck below 32dp. -->
+    <path android:pathData="M20.2,30.4 L22.3,35.6 L27.5,37.7 L22.3,39.8 L20.2,45 L18.1,39.8 L12.9,37.7 L18.1,35.6 Z" android:fillColor="#EAFBFF" android:fillAlpha="0.92" />
+    <path android:pathData="M26.6,17.2 L27.9,20.4 L31.1,21.7 L27.9,23 L26.6,26.2 L25.3,23 L22.1,21.7 L25.3,20.4 Z" android:fillColor="#EAFBFF" android:fillAlpha="0.78" />
 </vector>

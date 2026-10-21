@@ -18,7 +18,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Cloud
@@ -69,6 +68,7 @@ import com.skyora.weather.core.util.updateAge
 import com.skyora.weather.core.util.uvCategory
 import com.skyora.weather.core.util.UpdateAge
 import com.skyora.weather.core.util.windDirectionLabel
+import com.skyora.weather.domain.model.HourlyWindow
 import com.skyora.weather.domain.model.TemperatureUnit
 import com.skyora.weather.domain.model.WeatherSnapshot
 import com.skyora.weather.domain.model.sunTimes
@@ -119,7 +119,12 @@ fun WeatherDetailsContent(
             isSaved = isSaved,
             onToggleSaved = onToggleSaved,
         )
-        HourlyForecastCard(snapshot = snapshot, unit = unit, zone = zone)
+        HourlyForecastCard(
+            snapshot = snapshot,
+            unit = unit,
+            zone = zone,
+            nowMillis = nowMillis,
+        )
         DailyForecastCard(snapshot = snapshot, unit = unit, zone = zone)
         WeatherMetricsGrid(snapshot = snapshot, unit = unit, zone = zone)
         SunCard(snapshot = snapshot, zone = zone, nowMillis = nowMillis)
@@ -173,12 +178,8 @@ fun WeatherHero(
                     style = SkyoraTextStyles.SectionLabel,
                     color = SkyoraColors.TextSecondary,
                 )
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    text = description,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = SkyoraColors.TextSecondary,
-                )
+                // The condition is shown once, under the temperature. Printing it
+                // here too made the hero read "Clear sky" twice in a row.
             }
             WeatherIcon(
                 resId = weatherIconRes(
@@ -223,9 +224,14 @@ fun HourlyForecastCard(
     snapshot: WeatherSnapshot,
     unit: TemperatureUnit,
     zone: ZoneId,
+    nowMillis: Long,
     modifier: Modifier = Modifier,
 ) {
     if (snapshot.hourly.isEmpty()) return
+    // Show the slot containing `now` plus the hours after it. A cached snapshot
+    // fetched hours ago starts in the past, and labelling its first entry "Now"
+    // would misreport both the hour and the icon.
+    val hours = HourlyWindow.upcoming(snapshot.hourly, nowMillis, limit = 24)
     SkyoraCard(modifier = modifier.fillMaxWidth()) {
         SkyoraSectionHeader(
             title = stringResource(R.string.home_hourly_title),
@@ -243,11 +249,11 @@ fun HourlyForecastCard(
             contentPadding = PaddingValues(horizontal = 0.dp),
         ) {
             itemsIndexed(
-                items = snapshot.hourly,
+                items = hours,
                 key = { _, hour -> hour.timeEpochMillis },
-            ) { index, hour ->
+            ) { _, hour ->
                 HourlyCell(
-                    hourIndex = index,
+                    isNow = hour.timeEpochMillis <= nowMillis,
                     timeEpochMillis = hour.timeEpochMillis,
                     temperatureC = hour.temperatureC,
                     weatherCode = hour.weatherCode,
@@ -263,7 +269,7 @@ fun HourlyForecastCard(
 
 @Composable
 private fun HourlyCell(
-    hourIndex: Int,
+    isNow: Boolean,
     timeEpochMillis: Long,
     temperatureC: Double,
     weatherCode: Int,
@@ -272,7 +278,6 @@ private fun HourlyCell(
     unit: TemperatureUnit,
     zone: ZoneId,
 ) {
-    val isNow = hourIndex == 0
     val condition = WmoWeatherCodes.conditionFor(weatherCode)
     val description = stringResource(weatherDescriptionRes(weatherCode))
     val timeLabel = if (isNow) {
