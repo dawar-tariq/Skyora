@@ -260,6 +260,7 @@
     <string name="settings_open_system">Open system settings</string>
     <string name="settings_notifications">Notifications</string>
     <string name="settings_coming_soon">Coming later</string>
+    <string name="settings_unavailable_badge">Unavailable</string>
     <string name="settings_weather_alerts">Weather alerts</string>
     <string name="settings_weather_alerts_desc">Severe weather notifications.</string>
     <string name="settings_daily_forecast">Daily forecast</string>

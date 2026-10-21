@@ -59,7 +59,7 @@ class RainCheckWorker(
         SkyoraNotifier.post(
             applicationContext,
             SkyoraNotifier.ID_RAIN,
-            SkyoraNotifier.rainAlert(applicationContext, snapshot, next, probability, prefs.temperatureUnit),
+            SkyoraNotifier.rainAlert(applicationContext, snapshot, next, probability),
         )
         dedupe.markRainSent(key)
         return Result.success()

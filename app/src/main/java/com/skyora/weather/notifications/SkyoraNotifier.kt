@@ -66,7 +66,6 @@ object SkyoraNotifier {
         snapshot: WeatherSnapshot,
         hour: HourlyForecast,
         probability: Int,
-        unit: TemperatureUnit,
     ): Notification {
         val description = context.getString(weatherDescriptionRes(hour.weatherCode))
         val time = formatHour(Instant.ofEpochMilli(hour.timeEpochMillis), snapshot.zoneId())

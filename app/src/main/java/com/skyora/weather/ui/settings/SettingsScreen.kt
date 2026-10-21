@@ -384,7 +384,7 @@ fun SettingsScreen(
                         icon = Icons.Outlined.Warning,
                         title = stringResource(R.string.settings_notif_severe),
                         description = stringResource(R.string.settings_notif_severe_unavailable),
-                        badge = stringResource(R.string.settings_coming_soon),
+                        badge = stringResource(R.string.settings_unavailable_badge),
                     )
 
                     if (!notificationsAllowed) {
