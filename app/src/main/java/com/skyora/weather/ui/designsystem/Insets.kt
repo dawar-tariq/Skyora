@@ -18,6 +18,6 @@ import com.skyora.weather.ui.theme.SkyoraSpacing
 @Composable
 fun screenBottomPadding(extra: Dp = SkyoraSpacing.xl): Dp {
     val navigationBars = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
-    val bottomBar = LocalBottomBarInset
+    val bottomBar = LocalBottomBarInset.current
     return (if (bottomBar > 0.dp) bottomBar else navigationBars) + extra
 }

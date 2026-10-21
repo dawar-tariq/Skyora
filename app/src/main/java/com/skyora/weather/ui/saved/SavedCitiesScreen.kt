@@ -257,7 +257,7 @@ fun SavedCitiesScreen(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .padding(horizontal = SkyoraSpacing.md)
-                .padding(bottom = LocalBottomBarInset + SkyoraSpacing.sm),
+                .padding(bottom = LocalBottomBarInset.current + SkyoraSpacing.sm),
         )
     }
 

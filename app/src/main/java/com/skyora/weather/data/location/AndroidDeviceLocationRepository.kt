@@ -196,7 +196,7 @@ class AndroidDeviceLocationRepository(
             id = Location.deviceLocationId(latitude, longitude),
             name = name,
             admin1 = address.adminArea?.takeIf { it.isNotBlank() && !it.equals(name, ignoreCase = true) },
-            country = address.country.orEmpty(),
+            country = address.countryName.orEmpty(),
             countryCode = address.countryCode,
             latitude = latitude,
             longitude = longitude,

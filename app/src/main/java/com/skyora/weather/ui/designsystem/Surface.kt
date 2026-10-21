@@ -27,6 +27,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.skyora.weather.ui.theme.SkyoraColors
 import com.skyora.weather.ui.theme.SkyoraRadius
+import com.skyora.weather.ui.theme.SkyoraSizes
 import com.skyora.weather.ui.theme.SkyoraSpacing
 import com.skyora.weather.ui.theme.SkyoraTextStyles
 

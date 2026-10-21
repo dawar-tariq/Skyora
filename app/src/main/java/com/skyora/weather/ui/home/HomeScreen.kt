@@ -203,7 +203,7 @@ fun HomeScreen(
                     start = SkyoraSpacing.screen,
                     end = SkyoraSpacing.screen,
                     top = SkyoraSpacing.xs,
-                    bottom = LocalBottomBarInset + SkyoraSpacing.xxl,
+                    bottom = LocalBottomBarInset.current + SkyoraSpacing.xxl,
                 ),
                 verticalArrangement = Arrangement.spacedBy(SkyoraSpacing.lg),
             ) {
@@ -307,7 +307,7 @@ fun HomeScreen(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .padding(horizontal = SkyoraSpacing.md)
-                .padding(bottom = LocalBottomBarInset + SkyoraSpacing.sm),
+                .padding(bottom = LocalBottomBarInset.current + SkyoraSpacing.sm),
         )
     }
 
