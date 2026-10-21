@@ -84,11 +84,13 @@ import com.skyora.weather.core.util.hasAnyLocationPermission
 import com.skyora.weather.core.util.hasFineLocationPermission
 import com.skyora.weather.core.util.openAppSettings
 import com.skyora.weather.core.util.openUrl
+import com.skyora.weather.core.util.rememberNowMillis
 import com.skyora.weather.di.AppContainer
 import com.skyora.weather.domain.model.TemperatureUnit
 import com.skyora.weather.ui.designsystem.AttributionDialog
 import com.skyora.weather.ui.designsystem.ScreenHeader
 import com.skyora.weather.ui.designsystem.SkyoraBackdrop
+import com.skyora.weather.ui.designsystem.rememberAmbientSkyMoment
 import com.skyora.weather.ui.designsystem.SkyoraCard
 import com.skyora.weather.ui.designsystem.SkyoraConfirmDialog
 import com.skyora.weather.ui.designsystem.SkyoraDialog
@@ -103,7 +105,6 @@ import com.skyora.weather.ui.designsystem.SkyoraSnackbarHost
 import com.skyora.weather.ui.designsystem.SkyoraStatusChip
 import com.skyora.weather.ui.designsystem.SkyoraTextButton
 import com.skyora.weather.ui.designsystem.SkyoraWordmark
-import com.skyora.weather.ui.designsystem.WeatherVisualFamily
 import com.skyora.weather.ui.designsystem.screenBottomPadding
 import com.skyora.weather.ui.theme.SkyoraColors
 import com.skyora.weather.ui.theme.SkyoraRadius
@@ -195,8 +196,7 @@ fun SettingsScreen(
             .background(SkyoraColors.Ink),
     ) {
         SkyoraBackdrop(
-            family = WeatherVisualFamily.CLEAR,
-            isDay = false,
+            moment = rememberAmbientSkyMoment(nowMillis = rememberNowMillis()),
             modifier = Modifier.fillMaxSize(),
         )
 

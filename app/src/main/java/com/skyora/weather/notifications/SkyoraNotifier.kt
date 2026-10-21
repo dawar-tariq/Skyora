@@ -13,6 +13,8 @@ import com.skyora.weather.core.util.formatHour
 import com.skyora.weather.core.util.formatTemperature
 import com.skyora.weather.di.AppContainer
 import com.skyora.weather.domain.model.HourlyForecast
+import com.skyora.weather.domain.model.SkyMoments
+import com.skyora.weather.domain.model.SkyPhase
 import com.skyora.weather.domain.model.TemperatureUnit
 import com.skyora.weather.domain.model.WeatherSnapshot
 import com.skyora.weather.ui.designsystem.weatherDescriptionRes
@@ -108,9 +110,21 @@ object SkyoraNotifier {
             .setContentIntent(contentIntent)
             .setCategory(CATEGORY_WEATHER)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-            .setColor(context.getColor(R.color.skyora_cyan))
+            .setColor(context.getColor(accentColorRes(snapshot)))
             .setShowWhen(false)
     }
+
+    /**
+     * Notification surfaces stay minimal (Android draws them, not us), so the
+     * only phase signal is the accent tint: brand cyan by day, a deeper cyan at
+     * night and a restrained amber around sunrise/sunset.
+     */
+    private fun accentColorRes(snapshot: WeatherSnapshot): Int =
+        when (SkyMoments.resolve(snapshot).phase) {
+            SkyPhase.DAY -> R.color.skyora_cyan
+            SkyPhase.DAWN, SkyPhase.DUSK -> R.color.skyora_alert_dawn
+            SkyPhase.NIGHT -> R.color.skyora_alert_night
+        }
 
     /**
      * Notifications cannot carry a vector large icon, so the artwork is drawn

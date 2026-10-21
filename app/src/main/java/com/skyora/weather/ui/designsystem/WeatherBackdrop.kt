@@ -1,5 +1,7 @@
 package com.skyora.weather.ui.designsystem
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -8,8 +10,11 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -20,28 +25,10 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.dp
-import kotlin.math.cos
+import com.skyora.weather.domain.model.SkyMoment
 import kotlin.math.max
 import kotlin.math.sin
 import kotlin.random.Random
-
-private enum class Celestial { MOON, SUN, NONE }
-
-private data class BackdropPalette(
-    val sky: List<Color>,
-    val glow: Color,
-    val glowAlpha: Float,
-    val starAlpha: Float,
-    val celestial: Celestial,
-    val cloudColor: Color,
-    val cloudAlpha: Float,
-    val cloudCount: Int,
-    val ridges: List<Color>,
-    val rainCount: Int,
-    val snowCount: Int,
-    val fog: Boolean,
-    val flash: Boolean,
-)
 
 private data class StarSpec(val x: Float, val y: Float, val radius: Float, val alpha: Float, val phase: Float)
 private data class CloudSpec(val x: Float, val y: Float, val width: Float, val speed: Float, val alpha: Float)
@@ -61,23 +48,56 @@ private data class FlakeSpec(
 )
 
 /**
- * A cinematic, weather-reactive sky built from gradients, stars, clouds and
- * layered ridges. Everything is procedural: it scales from a small phone to a
- * tablet without a single image asset and never distracts from the text above
- * it (a vignette keeps AA contrast for the content).
+ * A cinematic, weather- and time-aware sky.
+ *
+ * The palette is chosen by [SkyMoment] — a resolved (phase, condition) pair —
+ * so the same forecast renders as a blue daylight sky at 13:00 and a navy
+ * night sky at 01:00 for the *same city*, regardless of where the phone is.
+ * See `domain/model/SkyMoment.kt` for the resolution rules.
+ *
+ * Everything is procedural: no image assets, and the bottom of the screen is
+ * always darkened by a palette-specific scrim so white text keeps at least
+ * 4.5:1 contrast on every treatment (asserted for every palette by
+ * `SkyBackdropContrastTest`). Palette data lives in SkyPalettes.kt.
  */
 @Composable
 fun SkyoraBackdrop(
-    family: WeatherVisualFamily,
-    isDay: Boolean,
+    moment: SkyMoment,
     modifier: Modifier = Modifier,
     animate: Boolean = true,
     showLandscape: Boolean = true,
 ) {
-    val palette = remember(family, isDay) { backdropPalette(family, isDay) }
+    val target = remember(moment) { paletteFor(moment) }
+
+    // Two-slot blend: data arriving or a city change cross-fades instead of
+    // snapping between a dark and a bright sky.
+    var previous by remember { mutableStateOf(target) }
+    var current by remember { mutableStateOf(target) }
+    val blend = remember { Animatable(1f) }
+
+    LaunchedEffect(target, animate) {
+        if (previous == target && current == target) return@LaunchedEffect
+        previous = current
+        current = target
+        if (!animate) {
+            previous = target
+            blend.snapTo(1f)
+            return@LaunchedEffect
+        }
+        blend.snapTo(0f)
+        blend.animateTo(1f, animationSpec = tween(durationMillis = 460, easing = FastOutSlowInEasing))
+        previous = current
+        blend.snapTo(1f)
+    }
+
+    val progress = blend.value
+    val palette = remember(previous, current, progress) {
+        if (progress >= 1f) current else lerpPalette(previous, current, progress)
+    }
+
     val stars = remember { generateStars(seed = 20261021, count = 76) }
     val clouds = remember(palette.cloudCount) { generateClouds(seed = 7, count = palette.cloudCount) }
-    val drops = remember { generateDrops(seed = 91, count = 48) }
+    val drops = remember { generateDrops(seed = 91, count = 64) }
     val flakes = remember { generateFlakes(seed = 27, count = 44) }
     val ridges = remember { ridgePoints() }
 
@@ -131,28 +151,56 @@ fun SkyoraBackdrop(
 
         drawRect(
             brush = Brush.verticalGradient(
-                colors = palette.sky,
+                // Spread keeps this on the vararg overload; the explicit stops
+                // give the sky its shape instead of evenly spaced bands.
+                *SKY_STOPS.mapIndexed { index, stop ->
+                    stop to palette.sky.getOrElse(index) { palette.sky.last() }
+                }.toTypedArray(),
                 startY = 0f,
                 endY = height,
             ),
             size = size,
         )
 
-        // Horizon glow.
-        val glowCenter = Offset(width * 0.72f, height * 0.58f)
-        drawCircle(
-            brush = Brush.radialGradient(
-                colors = listOf(
-                    palette.glow.copy(alpha = palette.glowAlpha),
-                    palette.glow.copy(alpha = palette.glowAlpha * 0.25f),
-                    Color.Transparent,
+        // Sunrise / sunset band. Narrow by design: it belongs to dawn and dusk,
+        // never to the whole afternoon.
+        val horizon = palette.horizon
+        if (horizon != null && palette.horizonAlpha > 0.01f) {
+            val centerY = height * palette.horizonY
+            val extent = height * 0.17f
+            drawRect(
+                brush = Brush.verticalGradient(
+                    colorStops = arrayOf(
+                        0f to Color.Transparent,
+                        0.45f to horizon.copy(alpha = palette.horizonAlpha),
+                        0.62f to horizon.copy(alpha = palette.horizonAlpha * 0.82f),
+                        1f to Color.Transparent,
+                    ),
+                    startY = centerY - extent,
+                    endY = centerY + extent,
                 ),
-                center = glowCenter,
+                topLeft = Offset(0f, centerY - extent),
+                size = Size(width, extent * 2f),
+            )
+        }
+
+        // Atmospheric glow: warm and low for daylight, cool and high at night.
+        val glowCenter = Offset(width * 0.72f, height * palette.glowY)
+        if (palette.glowAlpha > 0.005f) {
+            drawCircle(
+                brush = Brush.radialGradient(
+                    colors = listOf(
+                        palette.glow.copy(alpha = palette.glowAlpha),
+                        palette.glow.copy(alpha = palette.glowAlpha * 0.25f),
+                        Color.Transparent,
+                    ),
+                    center = glowCenter,
+                    radius = width * 1.05f,
+                ),
                 radius = width * 1.05f,
-            ),
-            radius = width * 1.05f,
-            center = glowCenter,
-        )
+                center = glowCenter,
+            )
+        }
 
         if (palette.starAlpha > 0.02f) {
             drawStars(stars, twinkleMotion, palette.starAlpha)
@@ -160,18 +208,24 @@ fun SkyoraBackdrop(
 
         when (palette.celestial) {
             Celestial.MOON -> drawMoon(centerX = width * 0.79f, centerY = height * 0.155f, radius = width * 0.075f)
-            Celestial.SUN -> drawSunDisc(centerX = width * 0.82f, centerY = height * 0.145f, radius = width * 0.058f)
+            Celestial.SUN -> drawSunDisc(
+                centerX = width * 0.82f,
+                centerY = height * palette.celestialY,
+                radius = width * palette.sunRadius,
+                inner = palette.sunInner,
+                outer = palette.sunOuter,
+            )
             Celestial.NONE -> Unit
         }
 
         drawClouds(clouds, width, height, motion, palette)
 
         if (palette.fog) {
-            drawFog(width, height, motion)
+            drawFog(width, height, motion, palette.cloudColor)
         }
 
         if (showLandscape) {
-            drawRidges(ridges, width, height, palette.ridges)
+            drawRidges(ridges, width, height, palette.ridges, palette.ridgeRim)
         }
 
         if (palette.rainCount > 0) {
@@ -188,218 +242,22 @@ fun SkyoraBackdrop(
             }
         }
 
-        // Readability scrim.
+        // Readability scrim: palette-specific, because a bright daylight sky
+        // needs more tint than a night sky does.
         drawRect(
             brush = Brush.verticalGradient(
-                0.0f to Color(0x66050A16),
-                0.22f to Color(0x14050A16),
-                0.58f to Color(0x1A050A16),
-                1.0f to Color(0xD9050A16),
+                *VEIL_STOPS.mapIndexed { index, stop ->
+                    stop to VEIL_COLOR.copy(alpha = palette.veil.getOrElse(index) { palette.veil.last() })
+                }.toTypedArray(),
             ),
             size = size,
         )
     }
 }
 
-private fun backdropPalette(family: WeatherVisualFamily, isDay: Boolean): BackdropPalette {
-    if (isDay) {
-        return when (family) {
-            WeatherVisualFamily.CLEAR -> BackdropPalette(
-                sky = listOf(Color(0xFF071E36), Color(0xFF0E3A58), Color(0xFF1E5C7A), Color(0xFF0D2A3D)),
-                glow = Color(0xFF8FE4FF),
-                glowAlpha = 0.22f,
-                starAlpha = 0f,
-                celestial = Celestial.SUN,
-                cloudColor = Color(0xFFC7E1EF),
-                cloudAlpha = 0.06f,
-                cloudCount = 2,
-                ridges = listOf(Color(0xFF0B2334), Color(0xFF071927), Color(0xFF04111B)),
-                rainCount = 0,
-                snowCount = 0,
-                fog = false,
-                flash = false,
-            )
-
-            WeatherVisualFamily.CLOUDY -> BackdropPalette(
-                sky = listOf(Color(0xFF0A2032), Color(0xFF123449), Color(0xFF244C63), Color(0xFF0E2534)),
-                glow = Color(0xFF8FC4D8),
-                glowAlpha = 0.12f,
-                starAlpha = 0f,
-                celestial = Celestial.NONE,
-                cloudColor = Color(0xFFC1D6E2),
-                cloudAlpha = 0.12f,
-                cloudCount = 4,
-                ridges = listOf(Color(0xFF0B2333), Color(0xFF071A27), Color(0xFF04121C)),
-                rainCount = 0,
-                snowCount = 0,
-                fog = false,
-                flash = false,
-            )
-
-            WeatherVisualFamily.RAIN -> BackdropPalette(
-                sky = listOf(Color(0xFF071A28), Color(0xFF0D2938), Color(0xFF1C4051), Color(0xFF0A1E2B)),
-                glow = Color(0xFF74A9C0),
-                glowAlpha = 0.12f,
-                starAlpha = 0f,
-                celestial = Celestial.NONE,
-                cloudColor = Color(0xFFA8BCC8),
-                cloudAlpha = 0.14f,
-                cloudCount = 5,
-                ridges = listOf(Color(0xFF0A1E2C), Color(0xFF061621), Color(0xFF030F17)),
-                rainCount = 42,
-                snowCount = 0,
-                fog = false,
-                flash = false,
-            )
-
-            WeatherVisualFamily.SNOW -> BackdropPalette(
-                sky = listOf(Color(0xFF0A2236), Color(0xFF143A52), Color(0xFF2C5B73), Color(0xFF102B3D)),
-                glow = Color(0xFFB6E6F7),
-                glowAlpha = 0.16f,
-                starAlpha = 0f,
-                celestial = Celestial.NONE,
-                cloudColor = Color(0xFFD8E9F2),
-                cloudAlpha = 0.15f,
-                cloudCount = 4,
-                ridges = listOf(Color(0xFF123246), Color(0xFF0A2232), Color(0xFF061521)),
-                rainCount = 0,
-                snowCount = 38,
-                fog = false,
-                flash = false,
-            )
-
-            WeatherVisualFamily.STORM -> BackdropPalette(
-                sky = listOf(Color(0xFF04121E), Color(0xFF0A2231), Color(0xFF173A49), Color(0xFF071521)),
-                glow = Color(0xFF7FA3B4),
-                glowAlpha = 0.10f,
-                starAlpha = 0f,
-                celestial = Celestial.NONE,
-                cloudColor = Color(0xFF7E94A2),
-                cloudAlpha = 0.18f,
-                cloudCount = 6,
-                ridges = listOf(Color(0xFF071825), Color(0xFF041019), Color(0xFF020A11)),
-                rainCount = 50,
-                snowCount = 0,
-                fog = false,
-                flash = true,
-            )
-
-            WeatherVisualFamily.FOG -> BackdropPalette(
-                sky = listOf(Color(0xFF0B2130), Color(0xFF153647), Color(0xFF2B4E5D), Color(0xFF102733)),
-                glow = Color(0xFFA9C7D2),
-                glowAlpha = 0.14f,
-                starAlpha = 0f,
-                celestial = Celestial.NONE,
-                cloudColor = Color(0xFFD3E1E7),
-                cloudAlpha = 0.12f,
-                cloudCount = 3,
-                ridges = listOf(Color(0xFF0D2634), Color(0xFF081B26), Color(0xFF040F17)),
-                rainCount = 0,
-                snowCount = 0,
-                fog = true,
-                flash = false,
-            )
-        }
-    }
-
-    return when (family) {
-        WeatherVisualFamily.CLEAR -> BackdropPalette(
-            sky = listOf(Color(0xFF02050C), Color(0xFF061225), Color(0xFF0B2C44), Color(0xFF071726)),
-            glow = Color(0xFF2FB8E8),
-            glowAlpha = 0.18f,
-            starAlpha = 0.95f,
-            celestial = Celestial.MOON,
-            cloudColor = Color(0xFF9DBBD6),
-            cloudAlpha = 0.05f,
-            cloudCount = 2,
-            ridges = listOf(Color(0xFF081625), Color(0xFF050E1A), Color(0xFF03080F)),
-            rainCount = 0,
-            snowCount = 0,
-            fog = false,
-            flash = false,
-        )
-
-        WeatherVisualFamily.CLOUDY -> BackdropPalette(
-            sky = listOf(Color(0xFF03070F), Color(0xFF071322), Color(0xFF0D2030), Color(0xFF06101B)),
-            glow = Color(0xFF2A6C88),
-            glowAlpha = 0.10f,
-            starAlpha = 0.20f,
-            celestial = Celestial.MOON,
-            cloudColor = Color(0xFF9CB4C5),
-            cloudAlpha = 0.10f,
-            cloudCount = 4,
-            ridges = listOf(Color(0xFF081623), Color(0xFF050F19), Color(0xFF03090F)),
-            rainCount = 0,
-            snowCount = 0,
-            fog = false,
-            flash = false,
-        )
-
-        WeatherVisualFamily.RAIN -> BackdropPalette(
-            sky = listOf(Color(0xFF02060C), Color(0xFF06101B), Color(0xFF0B1E2A), Color(0xFF050D15)),
-            glow = Color(0xFF2A6078),
-            glowAlpha = 0.10f,
-            starAlpha = 0f,
-            celestial = Celestial.NONE,
-            cloudColor = Color(0xFF8097A8),
-            cloudAlpha = 0.14f,
-            cloudCount = 5,
-            ridges = listOf(Color(0xFF071624), Color(0xFF040E17), Color(0xFF02080E)),
-            rainCount = 42,
-            snowCount = 0,
-            fog = false,
-            flash = false,
-        )
-
-        WeatherVisualFamily.SNOW -> BackdropPalette(
-            sky = listOf(Color(0xFF06101C), Color(0xFF0B2136), Color(0xFF13344A), Color(0xFF071522)),
-            glow = Color(0xFF8EC9DE),
-            glowAlpha = 0.13f,
-            starAlpha = 0.10f,
-            celestial = Celestial.MOON,
-            cloudColor = Color(0xFFC5DAE6),
-            cloudAlpha = 0.12f,
-            cloudCount = 4,
-            ridges = listOf(Color(0xFF0C2436), Color(0xFF071926), Color(0xFF040F18)),
-            rainCount = 0,
-            snowCount = 38,
-            fog = false,
-            flash = false,
-        )
-
-        WeatherVisualFamily.STORM -> BackdropPalette(
-            sky = listOf(Color(0xFF01040A), Color(0xFF050C15), Color(0xFF0D1B27), Color(0xFF03080D)),
-            glow = Color(0xFF4E6A82),
-            glowAlpha = 0.09f,
-            starAlpha = 0f,
-            celestial = Celestial.NONE,
-            cloudColor = Color(0xFF5E6E7C),
-            cloudAlpha = 0.2f,
-            cloudCount = 6,
-            ridges = listOf(Color(0xFF050F18), Color(0xFF030A11), Color(0xFF01050A)),
-            rainCount = 50,
-            snowCount = 0,
-            fog = false,
-            flash = true,
-        )
-
-        WeatherVisualFamily.FOG -> BackdropPalette(
-            sky = listOf(Color(0xFF040B12), Color(0xFF0A1A24), Color(0xFF142B37), Color(0xFF08131C)),
-            glow = Color(0xFF7E9FAD),
-            glowAlpha = 0.12f,
-            starAlpha = 0.05f,
-            celestial = Celestial.MOON,
-            cloudColor = Color(0xFFB6CBD6),
-            cloudAlpha = 0.10f,
-            cloudCount = 3,
-            ridges = listOf(Color(0xFF0A1B26), Color(0xFF061119), Color(0xFF030A0F)),
-            rainCount = 0,
-            snowCount = 0,
-            fog = true,
-            flash = false,
-        )
-    }
-}
+// ---------------------------------------------------------------------------
+// Drawing
+// ---------------------------------------------------------------------------
 
 private fun generateStars(seed: Int, count: Int): List<StarSpec> {
     val random = Random(seed)
@@ -408,7 +266,7 @@ private fun generateStars(seed: Int, count: Int): List<StarSpec> {
             x = random.nextFloat(),
             y = random.nextFloat() * 0.55f,
             radius = 0.6f + random.nextFloat() * 1.5f,
-            alpha = 0.25f + random.nextFloat() * 0.6f,
+            alpha = 0.35f + random.nextFloat() * 0.65f,
             phase = random.nextFloat() * 6.28f,
         )
     }
@@ -416,13 +274,13 @@ private fun generateStars(seed: Int, count: Int): List<StarSpec> {
 
 private fun generateClouds(seed: Int, count: Int): List<CloudSpec> {
     val random = Random(seed)
-    return List(count) { index ->
+    return List(count) {
         CloudSpec(
-            x = 0.1f + random.nextFloat() * 0.9f,
-            y = 0.15f + random.nextFloat() * 0.32f + index * 0.025f,
-            width = 260f + random.nextFloat() * 320f,
-            speed = 0.35f + random.nextFloat() * 0.8f,
-            alpha = 0.5f + random.nextFloat() * 0.5f,
+            x = random.nextFloat(),
+            y = 0.08f + random.nextFloat() * 0.42f,
+            width = 0.45f + random.nextFloat() * 0.55f,
+            speed = 0.4f + random.nextFloat() * 1.2f,
+            alpha = 0.55f + random.nextFloat() * 0.45f,
         )
     }
 }
@@ -433,9 +291,9 @@ private fun generateDrops(seed: Int, count: Int): List<DropSpec> {
         DropSpec(
             x = random.nextFloat(),
             offset = random.nextFloat(),
-            speed = 1.4f + random.nextFloat() * 1.8f,
-            length = 18f + random.nextFloat() * 26f,
-            alpha = 0.18f + random.nextFloat() * 0.30f,
+            speed = 0.55f + random.nextFloat() * 0.75f,
+            length = 10f + random.nextFloat() * 22f,
+            alpha = 0.18f + random.nextFloat() * 0.35f,
         )
     }
 }
@@ -446,17 +304,17 @@ private fun generateFlakes(seed: Int, count: Int): List<FlakeSpec> {
         FlakeSpec(
             x = random.nextFloat(),
             offset = random.nextFloat(),
-            speed = 0.5f + random.nextFloat() * 0.7f,
-            radius = 2.2f + random.nextFloat() * 3.6f,
+            speed = 0.18f + random.nextFloat() * 0.30f,
+            radius = 1.2f + random.nextFloat() * 2.4f,
             phase = random.nextFloat() * 6.28f,
         )
     }
 }
 
 private fun ridgePoints(): List<FloatArray> = listOf(
-    floatArrayOf(0.70f, 0.63f, 0.68f, 0.59f, 0.66f, 0.72f, 0.64f, 0.70f, 0.74f),
-    floatArrayOf(0.79f, 0.72f, 0.77f, 0.69f, 0.75f, 0.82f, 0.74f, 0.80f, 0.84f),
-    floatArrayOf(0.90f, 0.84f, 0.88f, 0.81f, 0.86f, 0.93f, 0.85f, 0.90f, 0.94f),
+    floatArrayOf(0.72f, 0.78f, 0.52f, 0.66f, 0.40f, 0.60f, 0.48f, 0.72f, 0.56f, 0.64f, 0.86f),
+    floatArrayOf(0.80f, 0.86f, 0.62f, 0.74f, 0.52f, 0.70f, 0.58f, 0.80f, 0.66f, 0.74f, 0.92f),
+    floatArrayOf(0.88f, 0.93f, 0.72f, 0.82f, 0.64f, 0.80f, 0.70f, 0.88f, 0.76f, 0.84f, 0.97f),
 )
 
 private fun DrawScope.drawStars(stars: List<StarSpec>, progress: Float, alphaMultiplier: Float) {
@@ -509,11 +367,17 @@ private fun DrawScope.drawMoon(centerX: Float, centerY: Float, radius: Float) {
     )
 }
 
-private fun DrawScope.drawSunDisc(centerX: Float, centerY: Float, radius: Float) {
+private fun DrawScope.drawSunDisc(
+    centerX: Float,
+    centerY: Float,
+    radius: Float,
+    inner: Color,
+    outer: Color,
+) {
     val center = Offset(centerX, centerY)
     drawCircle(
         brush = Brush.radialGradient(
-            colors = listOf(Color(0xFFFFE0A8).copy(alpha = 0.30f), Color.Transparent),
+            colors = listOf(inner.copy(alpha = 0.34f), Color.Transparent),
             center = center,
             radius = radius * 5f,
         ),
@@ -522,7 +386,7 @@ private fun DrawScope.drawSunDisc(centerX: Float, centerY: Float, radius: Float)
     )
     drawCircle(
         brush = Brush.radialGradient(
-            colors = listOf(Color(0xFFFFF4D6), Color(0xFFFFD08A)),
+            colors = listOf(inner, outer),
             center = Offset(center.x - radius * 0.2f, center.y - radius * 0.25f),
             radius = radius * 1.6f,
         ),
@@ -579,6 +443,7 @@ private fun DrawScope.drawRidges(
     width: Float,
     height: Float,
     colors: List<Color>,
+    rimColor: Color,
 ) {
     ridges.forEachIndexed { index, points ->
         val path = Path()
@@ -591,7 +456,7 @@ private fun DrawScope.drawRidges(
         path.close()
         drawPath(path, colors.getOrElse(index) { colors.last() })
 
-        // A faint cyan rim light on the ridge line.
+        // A faint rim light on the ridge line: warm in daylight, cyan at night.
         if (index == 0) {
             val rim = Path()
             points.forEachIndexed { pointIndex, fraction ->
@@ -600,7 +465,7 @@ private fun DrawScope.drawRidges(
             }
             drawPath(
                 path = rim,
-                color = Color(0xFF7FD9F2).copy(alpha = 0.16f),
+                color = rimColor.copy(alpha = 0.16f),
                 style = Stroke(width = 1.dp.toPx(), cap = StrokeCap.Round),
             )
         }
@@ -645,7 +510,7 @@ private fun DrawScope.drawSnow(
     }
 }
 
-private fun DrawScope.drawFog(width: Float, height: Float, progress: Float) {
+private fun DrawScope.drawFog(width: Float, height: Float, progress: Float, tint: Color) {
     repeat(3) { index ->
         val y = height * (0.50f + index * 0.10f) + sin((progress * 6.28f + index).toDouble()).toFloat() * height * 0.008f
         val bandHeight = height * (0.055f + index * 0.012f)
@@ -653,7 +518,7 @@ private fun DrawScope.drawFog(width: Float, height: Float, progress: Float) {
             brush = Brush.horizontalGradient(
                 colors = listOf(
                     Color.Transparent,
-                    Color(0xFFD6E7EF).copy(alpha = 0.07f),
+                    tint.copy(alpha = 0.10f),
                     Color.Transparent,
                 ),
             ),

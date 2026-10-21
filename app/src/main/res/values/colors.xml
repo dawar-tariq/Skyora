@@ -13,4 +13,8 @@
     <color name="icon_moon_bottom">#3B9FFF</color>
     <color name="skyora_text_primary_dark">#F3F8FF</color>
     <color name="skyora_text_secondary_dark">#A9BDD5</color>
+    <!-- Notification accents: deeper cyan at night, restrained amber at dawn/dusk. -->
+    <color name="skyora_alert_night">#3EA8CC</color>
+    <color name="skyora_alert_dawn">#F5A55F</color>
+
 </resources>

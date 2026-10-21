@@ -48,6 +48,8 @@ import com.skyora.weather.domain.model.WeatherError
 import com.skyora.weather.ui.designsystem.AttributionDialog
 import com.skyora.weather.ui.designsystem.SaveCityChip
 import com.skyora.weather.ui.designsystem.SkyoraBackdrop
+import com.skyora.weather.ui.designsystem.rememberAmbientSkyMoment
+import com.skyora.weather.ui.designsystem.rememberSkyMoment
 import com.skyora.weather.ui.designsystem.SkyoraIconButton
 import com.skyora.weather.ui.designsystem.SkyoraSecondaryButton
 import com.skyora.weather.ui.designsystem.SkyoraSnackbarHost
@@ -55,8 +57,6 @@ import com.skyora.weather.ui.designsystem.SkyoraStatePanel
 import com.skyora.weather.ui.designsystem.SkyoraStatusChip
 import com.skyora.weather.ui.designsystem.SkyoraTopBar
 import com.skyora.weather.ui.designsystem.WeatherErrorState
-import com.skyora.weather.ui.designsystem.WeatherVisualFamily
-import com.skyora.weather.ui.designsystem.visualFamily
 import com.skyora.weather.ui.theme.SkyoraColors
 import com.skyora.weather.ui.theme.SkyoraSpacing
 import com.skyora.weather.ui.weather.CachedWeatherBanner
@@ -114,8 +114,11 @@ fun CityWeatherScreen(container: AppContainer, location: Location?, onBack: () -
         Instant.ofEpochMilli(nowMillis).atZone(zone).toLocalDateTime()
     }
     val snapshot = state.snapshot
-    val family = snapshot?.currentCondition()?.visualFamily() ?: WeatherVisualFamily.CLEAR
-    val isDay = snapshot?.current?.isDay ?: false
+    val skyMoment = rememberSkyMoment(
+        snapshot = snapshot,
+        nowMillis = nowMillis,
+        fallbackZone = state.location.timezone?.let { runCatching { ZoneId.of(it) }.getOrNull() },
+    )
 
     Box(
         modifier = Modifier
@@ -123,8 +126,7 @@ fun CityWeatherScreen(container: AppContainer, location: Location?, onBack: () -
             .background(SkyoraColors.Ink),
     ) {
         SkyoraBackdrop(
-            family = family,
-            isDay = isDay,
+            moment = skyMoment,
             modifier = Modifier.fillMaxSize(),
         )
 
@@ -273,8 +275,7 @@ private fun CityNotFoundScreen(onBack: () -> Unit) {
             .background(SkyoraColors.Midnight),
     ) {
         SkyoraBackdrop(
-            family = WeatherVisualFamily.CLEAR,
-            isDay = false,
+            moment = rememberAmbientSkyMoment(nowMillis = rememberNowMillis()),
             modifier = Modifier.fillMaxSize(),
         )
         Column(

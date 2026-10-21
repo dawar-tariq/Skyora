@@ -29,10 +29,12 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.skyora.weather.R
 import com.skyora.weather.di.AppContainer
+import com.skyora.weather.domain.model.SkyCondition
+import com.skyora.weather.domain.model.SkyMoment
+import com.skyora.weather.domain.model.SkyPhase
 import com.skyora.weather.ui.designsystem.SkyoraBackdrop
 import com.skyora.weather.ui.designsystem.SkyoraMark
 import com.skyora.weather.ui.designsystem.SkyoraWordmark
-import com.skyora.weather.ui.designsystem.WeatherVisualFamily
 import com.skyora.weather.ui.theme.SkyoraColors
 import com.skyora.weather.ui.theme.SkyoraSpacing
 import kotlinx.coroutines.launch
@@ -66,9 +68,11 @@ fun SplashScreen(
             .fillMaxSize()
             .background(SkyoraColors.Ink),
     ) {
+        // Deliberately not time-aware: the system splash window and the
+        // launcher icon are brand navy, so a bright sky here would flash.
         SkyoraBackdrop(
-            family = WeatherVisualFamily.CLEAR,
-            isDay = false,
+            moment = SkyMoment(SkyPhase.NIGHT, SkyCondition.CLEAR),
+            animate = false,
             modifier = Modifier.fillMaxSize(),
         )
 

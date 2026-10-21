@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Shared widget plate: deep-navy gradient, 24dp corners, hairline cyan border. -->
+<!--
+  Shared widget plate - night variant: deep-navy gradient, 24dp corners,
+  hairline cyan border. WidgetRenderer swaps in widget_background_day/_dusk
+  for the matching SkyPhase and keeps this file for night and as fallback.
+-->
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="rectangle">
     <gradient

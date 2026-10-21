@@ -24,6 +24,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.outlined.Cloud
+import androidx.compose.material.icons.outlined.NotificationsNone
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -300,6 +301,100 @@ fun ForecastPreviewArt(modifier: Modifier = Modifier) {
                     )
                 }
             }
+        }
+    }
+}
+
+/**
+ * Abstract notification cards used on the onboarding notification step.
+ *
+ * Deliberately a *mock* alert card rather than live data: onboarding runs
+ * before any forecast is fetched, and showing fabricated temperatures here
+ * would be exactly the kind of fake content the app avoids elsewhere.
+ */
+@Composable
+fun NotificationAlertArt(modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier,
+        contentAlignment = Alignment.Center,
+    ) {
+        NotificationCardMock(
+            modifier = Modifier
+                .graphicsLayer {
+                    rotationZ = -7f
+                    translationY = 30.dp.toPx()
+                    scaleX = 0.9f
+                    scaleY = 0.9f
+                    alpha = 0.40f
+                },
+            accent = SkyoraColors.CyanSoft,
+        )
+        NotificationCardMock(
+            modifier = Modifier
+                .graphicsLayer {
+                    rotationZ = 6f
+                    translationY = 16.dp.toPx()
+                    scaleX = 0.95f
+                    scaleY = 0.95f
+                    alpha = 0.70f
+                },
+            accent = SkyoraColors.Warning,
+        )
+        NotificationCardMock(accent = SkyoraColors.Cyan)
+    }
+}
+
+@Composable
+private fun NotificationCardMock(
+    modifier: Modifier = Modifier,
+    accent: Color,
+) {
+    Row(
+        modifier = modifier
+            .width(214.dp)
+            .clip(RoundedCornerShape(18.dp))
+            .background(SkyoraColors.Navy.copy(alpha = 0.94f))
+            .border(1.dp, SkyoraColors.BorderStrong, RoundedCornerShape(18.dp))
+            .padding(horizontal = 12.dp, vertical = 11.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(
+            modifier = Modifier
+                .size(30.dp)
+                .clip(RoundedCornerShape(9.dp))
+                .background(accent.copy(alpha = 0.16f)),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                Icons.Outlined.NotificationsNone,
+                contentDescription = null,
+                tint = accent,
+                modifier = Modifier.size(16.dp),
+            )
+        }
+        Spacer(Modifier.width(10.dp))
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+            Box(
+                Modifier
+                    .fillMaxWidth(0.62f)
+                    .height(7.dp)
+                    .clip(RoundedCornerShape(50))
+                    .background(SkyoraColors.TextPrimary.copy(alpha = 0.75f)),
+            )
+            Box(
+                Modifier
+                    .fillMaxWidth(0.86f)
+                    .height(5.dp)
+                    .clip(RoundedCornerShape(50))
+                    .background(SkyoraColors.TextSecondary.copy(alpha = 0.35f)),
+            )
+            Box(
+                Modifier
+                    .fillMaxWidth(0.40f)
+                    .height(5.dp)
+                    .clip(RoundedCornerShape(50))
+                    .background(accent.copy(alpha = 0.45f)),
+            )
         }
     }
 }

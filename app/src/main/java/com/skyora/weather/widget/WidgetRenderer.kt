@@ -15,6 +15,8 @@ import com.skyora.weather.core.util.formatTemperature
 import com.skyora.weather.core.util.updateAge
 import com.skyora.weather.di.AppContainer
 import com.skyora.weather.domain.model.Location
+import com.skyora.weather.domain.model.SkyMoments
+import com.skyora.weather.domain.model.SkyPhase
 import com.skyora.weather.domain.model.TemperatureUnit
 import com.skyora.weather.domain.model.WeatherSnapshot
 import com.skyora.weather.ui.designsystem.weatherDescriptionRes
@@ -61,6 +63,7 @@ object WidgetRenderer {
         } else {
             compactViews(context, snapshot, location, unit, minWidth, minHeight)
         }
+        views.setInt(R.id.widget_root, "setBackgroundResource", plateFor(snapshot))
 
         val openIntent = Intent(context, MainActivity::class.java).apply {
             putExtra(MainActivity.EXTRA_LOCATION_PAYLOAD, location.encodeForRoute())
@@ -202,6 +205,21 @@ object WidgetRenderer {
         views.setImageViewResource(R.id.widget_icon, R.drawable.weather_unknown)
         views.setTextViewText(R.id.widget_updated, context.getString(R.string.widget_tap_to_open))
         return views
+    }
+
+    /**
+     * Widget plates follow the same [SkyPhase] as the app, but stay dark navy:
+     * a home-screen widget sits on an unknown wallpaper, so a full daylight
+     * sky would destroy its contrast. Only the plate's top edge and border
+     * carry the phase colour.
+     */
+    private fun plateFor(snapshot: WeatherSnapshot?): Int {
+        val moment = snapshot?.let { SkyMoments.resolve(it) } ?: return R.drawable.widget_background
+        return when (moment.phase) {
+            SkyPhase.DAY -> R.drawable.widget_background_day
+            SkyPhase.DAWN, SkyPhase.DUSK -> R.drawable.widget_background_dusk
+            SkyPhase.NIGHT -> R.drawable.widget_background
+        }
     }
 
     /** "Updated 12 min ago" — the widget never pretends data is live. */

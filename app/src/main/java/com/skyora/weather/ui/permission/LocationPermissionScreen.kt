@@ -49,6 +49,7 @@ import com.skyora.weather.core.util.hasFineLocationPermission
 import com.skyora.weather.core.util.openAppSettings
 import com.skyora.weather.core.util.openLocationSettings
 import com.skyora.weather.core.util.shouldShowLocationRationale
+import com.skyora.weather.core.util.rememberNowMillis
 import com.skyora.weather.di.AppContainer
 import com.skyora.weather.domain.model.LocationAccessState
 import com.skyora.weather.domain.model.LocationFailureReason
@@ -56,12 +57,12 @@ import com.skyora.weather.ui.designsystem.BannerTone
 import com.skyora.weather.ui.designsystem.BrandLockup
 import com.skyora.weather.ui.designsystem.LocationRingsArt
 import com.skyora.weather.ui.designsystem.SkyoraBackdrop
+import com.skyora.weather.ui.designsystem.rememberAmbientSkyMoment
 import com.skyora.weather.ui.designsystem.SkyoraBanner
 import com.skyora.weather.ui.designsystem.SkyoraLoadingRow
 import com.skyora.weather.ui.designsystem.SkyoraPrimaryButton
 import com.skyora.weather.ui.designsystem.SkyoraSecondaryButton
 import com.skyora.weather.ui.designsystem.SkyoraTextButton
-import com.skyora.weather.ui.designsystem.WeatherVisualFamily
 import com.skyora.weather.ui.theme.SkyoraColors
 import com.skyora.weather.ui.theme.SkyoraSpacing
 import kotlinx.coroutines.delay
@@ -149,8 +150,7 @@ fun LocationPermissionScreen(
             .background(SkyoraColors.Midnight),
     ) {
         SkyoraBackdrop(
-            family = WeatherVisualFamily.CLEAR,
-            isDay = false,
+            moment = rememberAmbientSkyMoment(nowMillis = rememberNowMillis()),
             modifier = Modifier.fillMaxSize(),
         )
 

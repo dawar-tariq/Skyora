@@ -9,20 +9,6 @@ import com.skyora.weather.domain.model.WeatherCondition
 import com.skyora.weather.domain.model.WmoWeatherCodes
 import com.skyora.weather.domain.model.sunTimes
 
-enum class WeatherVisualFamily { CLEAR, CLOUDY, RAIN, SNOW, STORM, FOG }
-
-fun WeatherCondition.visualFamily(): WeatherVisualFamily = when (this) {
-    WeatherCondition.CLEAR, WeatherCondition.MAINLY_CLEAR -> WeatherVisualFamily.CLEAR
-    WeatherCondition.PARTLY_CLOUDY, WeatherCondition.OVERCAST, WeatherCondition.UNKNOWN ->
-        WeatherVisualFamily.CLOUDY
-    WeatherCondition.FOG -> WeatherVisualFamily.FOG
-    WeatherCondition.DRIZZLE, WeatherCondition.FREEZING_DRIZZLE, WeatherCondition.RAIN,
-    WeatherCondition.FREEZING_RAIN, WeatherCondition.RAIN_SHOWERS -> WeatherVisualFamily.RAIN
-    WeatherCondition.SNOW, WeatherCondition.SNOW_GRAINS, WeatherCondition.SNOW_SHOWERS ->
-        WeatherVisualFamily.SNOW
-    WeatherCondition.THUNDERSTORM, WeatherCondition.THUNDERSTORM_HAIL -> WeatherVisualFamily.STORM
-}
-
 /** Precise WMO description, including intensity where the code provides it. */
 @StringRes
 fun weatherDescriptionRes(code: Int): Int = when (code) {
