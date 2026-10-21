@@ -12,15 +12,19 @@ A native Android weather app built with Kotlin, Jetpack Compose and Material 3. 
 |---|---|
 | Source | 66 app Kotlin sources + 3 test files, 8 screens, 8 ViewModels, 3 repositories, 338 strings |
 | Android build | **Verified on GitHub Actions** (ubuntu-latest, JDK 17, Android SDK 35): `testDebugUnitTest` and `assembleDebug` both pass. |
-| APK | Produced by CI as the `skyora-debug-apk` artifact (debug-signed, installable). |
+| APK | Built by CI and published to [Releases](https://github.com/dawar-tariq/Skyora/releases/latest) (debug-signed, installable). |
 | Unit tests | 27 JVM tests in `app/src/test`, executed by CI: **all pass**. |
 | Notifications | Deliberately out of scope for this release; the seam exists (`WeatherAlertScheduler` + `NoOpWeatherAlertScheduler`). |
 
 ## Get the app
 
-1. Open the repo's **Actions** tab → latest green **Android** run on `main` (or on the PR).
-2. Download the **`skyora-debug-apk`** artifact (a zip containing `app-debug.apk`, ~18 MB).
-3. Unzip and install on a device running Android 8.0 (API 26) or newer. You will need to allow "install unknown apps" for your browser/file manager, since the APK is debug-signed rather than Play-signed.
+**Direct download (always the latest `main` build):**
+
+<https://github.com/dawar-tariq/Skyora/releases/latest/download/app-debug.apk>
+
+Or open the [latest release](https://github.com/dawar-tariq/Skyora/releases/latest). The APK is rebuilt by CI on every push to `main`; it is **debug-signed**, ~18 MB, and installs on Android 8.0 (API 26) or newer. Enable "install unknown apps" for your browser or file manager when prompted.
+
+Prefer the Actions tab? Every run also uploads a `skyora-debug-apk` artifact (zip containing the same APK).
 
 Or build it yourself with the commands in [Build & run](#build--run).
 
