@@ -129,6 +129,26 @@ def fit_on_canvas(layer, canvas_px, fraction, background):
     return canvas
 
 
+def solid_art(layer, plate=(2.0, 11.0, 35.0)):
+    """Key the navy plate out of the artwork, keeping the mark itself.
+
+    Alpha alone cannot separate them: the bloom is *opaque enough* navy, so any
+    threshold that removes it also eats the cloud's shadows, and any threshold
+    that keeps the art keeps a dark disc. Keying on colour does separate them —
+    art pixels are cyan/white and far brighter than the plate — so the result is
+    the crescent and cloud with clean edges on a transparent background.
+    """
+    arr = np.asarray(layer.convert("RGBA")).astype(np.float32)
+    rgb, alpha = arr[..., :3], arr[..., 3] / 255.0
+    lum = rgb[..., 0] * 0.299 + rgb[..., 1] * 0.587 + rgb[..., 2] * 0.114
+    # Plate luminance is ~12; the moon's own edge starts around 90.
+    art = np.clip((lum - 34.0) / 46.0, 0.0, 1.0)
+    art = art * art * (3.0 - 2.0 * art)
+    out_alpha = np.clip(art * np.clip(alpha * 1.6, 0.0, 1.0), 0.0, 1.0)
+    out = np.dstack([rgb, out_alpha * 255.0]).clip(0, 255).astype(np.uint8)
+    return Image.fromarray(out)
+
+
 def circle_mask(size, inset=0):
     mask = Image.new("L", (size, size), 0)
     draw = ImageDraw.Draw(mask)
@@ -175,6 +195,17 @@ def main():
         rounded = square.copy()
         rounded.putalpha(circle_mask(size))
         rounded.save(folder / "ic_launcher_round.png", optimize=True)
+
+    # --- in-app brand mark (header logo, widget header, notification large icon).
+    # White glow removed: the mark is drawn on cards and on a white notification
+    # background, where partially-opaque navy reads as a dark fringe.
+    clean = solid_art(fg)
+    for name, scale in DENSITIES.items():
+        px = int(round(64 * scale))
+        folder = RES / f"drawable-{name}"
+        folder.mkdir(parents=True, exist_ok=True)
+        mark = fit_on_canvas(clean, px, 0.96, ("RGBA", (0, 0, 0, 0)))
+        mark.save(folder / "ic_brand_mark.png", optimize=True)
 
     # --- splash icon. Android 12 masks it to a circle, so keep the art small.
     for name, scale in DENSITIES.items():
