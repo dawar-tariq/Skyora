@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="skyora_ink">#050A16</color>
+    <color name="skyora_midnight">#081120</color>
+    <color name="skyora_cyan">#5BD8F5</color>
+    <color name="skyora_cyan_soft">#8FE9FF</color>
+    <color name="skyora_blue">#3A8DFF</color>
+    <color name="icon_background_top">#0E1E3A</color>
+    <color name="icon_background_bottom">#04080F</color>
+    <color name="icon_cloud_top">#EAFBFF</color>
+    <color name="icon_cloud_bottom">#55A9F2</color>
+    <color name="icon_moon_top">#B9F2FF</color>
+    <color name="icon_moon_bottom">#3B9FFF</color>
+</resources>

@@ -1,0 +1,304 @@
+package com.skyora.weather.ui.designsystem
+
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.outlined.Cloud
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.skyora.weather.domain.model.DefaultLocations
+import com.skyora.weather.domain.model.WeatherCondition
+import com.skyora.weather.ui.theme.SkyoraColors
+import com.skyora.weather.ui.theme.SkyoraTextStyles
+import androidx.compose.ui.res.stringResource
+import com.skyora.weather.R
+import kotlin.math.cos
+import kotlin.math.sin
+
+/** Pulsing location rings with a gradient pin, used on permission and onboarding. */
+@Composable
+fun LocationRingsArt(
+    modifier: Modifier = Modifier,
+    animate: Boolean = true,
+) {
+    val transition = rememberInfiniteTransition(label = "locationRings")
+    val pulse by transition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 3_000, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart,
+        ),
+        label = "pulse",
+    )
+    val progress = if (animate) pulse else 0.35f
+
+    Canvas(modifier = modifier) {
+        val minDimension = size.minDimension
+        val center = Offset(size.width / 2f, size.height * 0.44f)
+        val maxRadius = minDimension * 0.42f
+
+        drawCircle(
+            brush = Brush.radialGradient(
+                colors = listOf(SkyoraColors.Cyan.copy(alpha = 0.20f), Color.Transparent),
+                center = center,
+                radius = maxRadius * 1.35f,
+            ),
+            radius = maxRadius * 1.35f,
+            center = center,
+        )
+
+        repeat(3) { index ->
+            val phase = ((progress + index / 3f) % 1f)
+            drawCircle(
+                color = SkyoraColors.Cyan.copy(alpha = (0.30f * (1f - phase)).coerceIn(0f, 1f)),
+                radius = maxRadius * (0.34f + 0.66f * phase),
+                center = center,
+                style = Stroke(width = 1.2.dp.toPx()),
+            )
+        }
+        drawCircle(
+            color = SkyoraColors.Cyan.copy(alpha = 0.20f),
+            radius = maxRadius * 0.62f,
+            center = center,
+            style = Stroke(width = 1.dp.toPx()),
+        )
+        drawCircle(
+            color = SkyoraColors.Cyan.copy(alpha = 0.12f),
+            radius = maxRadius * 0.86f,
+            center = center,
+            style = Stroke(width = 1.dp.toPx()),
+        )
+
+        val pinCenter = Offset(center.x, center.y - minDimension * 0.02f)
+        val pinRadius = minDimension * 0.082f
+        val pinBrush = Brush.verticalGradient(
+            colors = listOf(SkyoraColors.CyanSoft, SkyoraColors.Blue),
+            startY = pinCenter.y - pinRadius,
+            endY = pinCenter.y + pinRadius * 2,
+        )
+        drawCircle(
+            brush = Brush.radialGradient(
+                colors = listOf(SkyoraColors.Cyan.copy(alpha = 0.35f), Color.Transparent),
+                center = pinCenter,
+                radius = pinRadius * 2.2f,
+            ),
+            radius = pinRadius * 2.2f,
+            center = pinCenter,
+        )
+        drawCircle(brush = pinBrush, radius = pinRadius, center = pinCenter)
+        val tip = Path().apply {
+            moveTo(pinCenter.x - pinRadius * 0.52f, pinCenter.y + pinRadius * 0.78f)
+            lineTo(pinCenter.x, pinCenter.y + pinRadius * 2.05f)
+            lineTo(pinCenter.x + pinRadius * 0.52f, pinCenter.y + pinRadius * 0.78f)
+            close()
+        }
+        drawPath(tip, pinBrush)
+        drawCircle(color = SkyoraColors.Ink, radius = pinRadius * 0.34f, center = pinCenter)
+
+        // Small orbit accents.
+        drawCircle(
+            color = SkyoraColors.CyanSoft.copy(alpha = 0.5f),
+            radius = minDimension * 0.008f,
+            center = Offset(center.x + maxRadius * 0.9f, center.y - maxRadius * 0.35f),
+        )
+        drawCircle(
+            color = SkyoraColors.CyanSoft.copy(alpha = 0.3f),
+            radius = minDimension * 0.005f,
+            center = Offset(center.x - maxRadius * 0.75f, center.y + maxRadius * 0.45f),
+        )
+    }
+}
+
+/** Abstract saved-city cards used in the empty state and onboarding. */
+@Composable
+fun EmptyCitiesArt(modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier,
+        contentAlignment = Alignment.Center,
+    ) {
+        MiniCityCard(
+            modifier = Modifier
+                .graphicsLayer {
+                    rotationZ = -9f
+                    translationY = 26.dp.toPx()
+                    scaleX = 0.9f
+                    scaleY = 0.9f
+                    alpha = 0.45f
+                },
+        )
+        MiniCityCard(
+            modifier = Modifier
+                .graphicsLayer {
+                    rotationZ = 7f
+                    translationY = 14.dp.toPx()
+                    scaleX = 0.95f
+                    scaleY = 0.95f
+                    alpha = 0.7f
+                },
+        )
+        MiniCityCard()
+    }
+}
+
+@Composable
+private fun MiniCityCard(modifier: Modifier = Modifier) {
+    Row(
+        modifier = modifier
+            .width(196.dp)
+            .clip(RoundedCornerShape(18.dp))
+            .background(SkyoraColors.Navy.copy(alpha = 0.92f))
+            .border(1.dp, SkyoraColors.BorderStrong, RoundedCornerShape(18.dp))
+            .padding(12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(
+            modifier = Modifier
+                .size(34.dp)
+                .clip(CircleShape)
+                .background(SkyoraColors.Cyan.copy(alpha = 0.12f)),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                Icons.Outlined.Cloud,
+                contentDescription = null,
+                tint = SkyoraColors.CyanSoft,
+                modifier = Modifier.size(18.dp),
+            )
+        }
+        Spacer(Modifier.width(10.dp))
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+            Box(
+                Modifier
+                    .fillMaxWidth(0.72f)
+                    .height(7.dp)
+                    .clip(RoundedCornerShape(50))
+                    .background(SkyoraColors.TextSecondary.copy(alpha = 0.35f)),
+            )
+            Box(
+                Modifier
+                    .fillMaxWidth(0.46f)
+                    .height(5.dp)
+                    .clip(RoundedCornerShape(50))
+                    .background(SkyoraColors.TextTertiary.copy(alpha = 0.30f)),
+            )
+        }
+        Icon(
+            Icons.Filled.Favorite,
+            contentDescription = null,
+            tint = SkyoraColors.Cyan.copy(alpha = 0.85f),
+            modifier = Modifier.size(14.dp),
+        )
+    }
+}
+
+/** A miniature weather screen used on the first onboarding slide. */
+@Composable
+fun ForecastPreviewArt(modifier: Modifier = Modifier) {
+    Column(
+        modifier = modifier
+            .width(226.dp)
+            .clip(RoundedCornerShape(24.dp))
+            .background(SkyoraColors.Navy.copy(alpha = 0.92f))
+            .border(1.dp, SkyoraColors.BorderStrong, RoundedCornerShape(24.dp))
+            .padding(16.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Text(
+                    text = DefaultLocations.Srinagar.name,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = SkyoraColors.TextSecondary,
+                )
+                Spacer(Modifier.height(2.dp))
+                Text(
+                    text = "24°",
+                    style = SkyoraTextStyles.HeroTemperature.copy(
+                        fontSize = 34.sp,
+                        lineHeight = 38.sp,
+                        letterSpacing = (-1).sp,
+                    ),
+                    color = SkyoraColors.TextPrimary,
+                )
+            }
+            WeatherGlyph(
+                condition = WeatherCondition.PARTLY_CLOUDY,
+                isDay = true,
+                modifier = Modifier.size(54.dp),
+                contentDescription = stringResource(R.string.weather_partly_cloudy),
+            )
+        }
+        Spacer(Modifier.height(8.dp))
+        Text(
+            text = stringResource(R.string.weather_partly_cloudy),
+            style = MaterialTheme.typography.bodySmall,
+            color = SkyoraColors.TextSecondary,
+        )
+        Spacer(Modifier.height(14.dp))
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .height(1.dp)
+                .background(SkyoraColors.Border),
+        )
+        Spacer(Modifier.height(12.dp))
+        Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
+            listOf("09", "12", "15", "18").forEachIndexed { index, hour ->
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        text = hour,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = SkyoraColors.TextTertiary,
+                    )
+                    Spacer(Modifier.height(5.dp))
+                    WeatherGlyph(
+                        condition = if (index == 2) WeatherCondition.CLEAR else WeatherCondition.PARTLY_CLOUDY,
+                        isDay = true,
+                        modifier = Modifier.size(20.dp),
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        text = "${24 + index}°",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = SkyoraColors.TextPrimary,
+                    )
+                }
+            }
+        }
+    }
+}
