@@ -32,6 +32,18 @@ fun Context.openAppSettings() {
     }
 }
 
+/** Opens this app's notification settings (Android 8+). */
+fun Context.openNotificationSettings() {
+    runCatching {
+        startActivity(
+            Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
+                putExtra(Settings.EXTRA_APP_PACKAGE, packageName)
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            },
+        )
+    }.onFailure { openAppSettings() }
+}
+
 fun Context.openLocationSettings() {
     runCatching {
         startActivity(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))

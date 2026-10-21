@@ -9,6 +9,8 @@ import com.skyora.weather.domain.model.DailyForecast
 import com.skyora.weather.domain.model.HourlyForecast
 import com.skyora.weather.domain.model.Location
 import com.skyora.weather.domain.model.WeatherSnapshot
+import com.skyora.weather.domain.model.SkyIcons
+import com.skyora.weather.domain.model.SunTimes
 import com.skyora.weather.domain.model.localDateTimeToInstant
 import java.time.Instant
 import java.time.LocalDate
@@ -20,6 +22,12 @@ import java.time.ZoneId
  * Missing or implausible values are dropped rather than defaulted to
  * misleading numbers. If essential data (current temperature or a complete
  * forecast day) is missing, null is returned and the UI shows an error state.
+ *
+ * `isDay` is not copied from the API's `is_day` flag. It is recomputed per
+ * hour from that hour's own timestamp, the location's timezone and that
+ * calendar day's sunrise/sunset ([SkyIcons.isDaylight]); the flag is only used
+ * when the payload carries no sun data at all. This is what stops a moon from
+ * appearing on an 11:00 forecast slot.
  */
 class ForecastMapper {
 
@@ -33,13 +41,19 @@ class ForecastMapper {
         val now = Instant.ofEpochMilli(fetchedAtMillis)
         val currentInstant = localDateTimeToInstant(currentDto.time, zone) ?: now
 
-        val hourly = mapHourly(dto.hourly, zone)
+        val daily = mapDaily(dto.daily, zone)
+        if (daily.isEmpty()) return null
+
+        val sunTimes: Map<LocalDate, SunTimes> = daily
+            .mapNotNull { day ->
+                day.localDate()?.let { it to SunTimes(day.sunriseEpochMillis, day.sunsetEpochMillis) }
+            }
+            .toMap()
+
+        val hourly = mapHourly(dto.hourly, zone, sunTimes)
         val upcoming = hourly
             .filter { !Instant.ofEpochMilli(it.timeEpochMillis).isBefore(now.minusSeconds(3600)) }
             .take(24)
-
-        val daily = mapDaily(dto.daily, zone)
-        if (daily.isEmpty()) return null
 
         val currentVisibility = currentHourlyIndex(dto.hourly, zone, now)?.let { index ->
             dto.hourly?.visibility?.getOrNull(index).finiteOrNull()
@@ -56,10 +70,7 @@ class ForecastMapper {
                 temperatureC = currentTemperature,
                 feelsLikeC = currentDto.apparentTemperature.plausibleTemperature() ?: currentTemperature,
                 weatherCode = currentDto.weatherCode ?: -1,
-                isDay = when (currentDto.isDay) {
-                    null -> currentInstant.atZone(zone).hour in 6..18
-                    else -> currentDto.isDay != 0
-                },
+                isDay = SkyIcons.isDaylight(currentInstant.toEpochMilli(), zone, sunTimes),
                 humidityPercent = currentDto.relativeHumidity?.coerceIn(0, 100),
                 windSpeedKmh = currentDto.windSpeed.nonNegativeOrNull(),
                 windDirectionDegrees = currentDto.windDirection?.let { ((it % 360) + 360) % 360 },
@@ -76,7 +87,11 @@ class ForecastMapper {
         )
     }
 
-    private fun mapHourly(dto: HourlyDto?, zone: ZoneId): List<HourlyForecast> {
+    private fun mapHourly(
+        dto: HourlyDto?,
+        zone: ZoneId,
+        sunTimes: Map<LocalDate, SunTimes>,
+    ): List<HourlyForecast> {
         val times = dto?.time ?: return emptyList()
         val temps = dto.temperature ?: return emptyList()
         return times.indices.mapNotNull { index ->
@@ -86,7 +101,7 @@ class ForecastMapper {
                 timeEpochMillis = instant.toEpochMilli(),
                 temperatureC = temperature,
                 weatherCode = dto.weatherCode?.getOrNull(index) ?: -1,
-                isDay = (dto.isDay?.getOrNull(index) ?: 1) != 0,
+                isDay = SkyIcons.isDaylight(instant.toEpochMilli(), zone, sunTimes),
                 precipitationProbability = dto.precipitationProbability?.getOrNull(index)?.coerceIn(0, 100),
                 feelsLikeC = dto.apparentTemperature?.getOrNull(index).plausibleTemperature(),
                 humidityPercent = dto.relativeHumidity?.getOrNull(index)?.coerceIn(0, 100),

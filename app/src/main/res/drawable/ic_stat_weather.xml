@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Status-bar notification icon: monochrome cloud + crescent, 24dp. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M14.8,3.6 A4.6,4.6 0 1 0 10.6,11.4 A5.3,5.3 0 0 1 14.8,3.6 Z" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M7.2,13.4 m-2.9,0 a2.9,2.9 0 1,0 5.8,0 a2.9,2.9 0 1,0 -5.8,0 Z" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M11,11.9 m-3.9,0 a3.9,3.9 0 1,0 7.8,0 a3.9,3.9 0 1,0 -7.8,0 Z" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M14.8,13.8 m-2.7,0 a2.7,2.7 0 1,0 5.4,0 a2.7,2.7 0 1,0 -5.4,0 Z" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M7.7,13.5 h7.7 a2.05,2.05 0 0 1 0,4.1 h-7.7 a2.05,2.05 0 0 1 0,-4.1 Z" />
+</vector>

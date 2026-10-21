@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="100"
+    android:viewportHeight="100">
+    <path android:pathData="M82.13943541210779,33.43054289849303 L87.03017341577683,34.47010135258183" android:strokeColor="#FFD166" android:strokeWidth="4.0" android:strokeLineCap="round" />
+    <path android:pathData="M74.98654407774795,43.8380643710995 L77.70973925282308,48.03141721082662" android:strokeColor="#FFD166" android:strokeWidth="4.0" android:strokeLineCap="round" />
+    <path android:pathData="M62.56945710150697,46.139435412107794 L61.52989864741817,51.03017341577682" android:strokeColor="#FFD166" android:strokeWidth="4.0" android:strokeLineCap="round" />
+    <path android:pathData="M52.16193562890051,38.98654407774795 L47.96858278917338,41.709739252823084" android:strokeColor="#FFD166" android:strokeWidth="4.0" android:strokeLineCap="round" />
+    <path android:pathData="M49.86056458789221,26.56945710150697 L44.969826584223185,25.52989864741817" android:strokeColor="#FFD166" android:strokeWidth="4.0" android:strokeLineCap="round" />
+    <path android:pathData="M57.01345592225206,16.1619356289005 L54.290260747176916,11.968582789173382" android:strokeColor="#FFD166" android:strokeWidth="4.0" android:strokeLineCap="round" />
+    <path android:pathData="M69.43054289849303,13.86056458789221 L70.47010135258182,8.969826584223181" android:strokeColor="#FFD166" android:strokeWidth="4.0" android:strokeLineCap="round" />
+    <path android:pathData="M79.83806437109949,21.013455922252056 L84.03141721082662,18.29026074717692" android:strokeColor="#FFD166" android:strokeWidth="4.0" android:strokeLineCap="round" />
+    <path android:pathData="M53.0,30 a13.0,13.0 0 1,0 26.0,0 a13.0,13.0 0 1,0 -26.0,0 Z" android:fillColor="#FFCB57" android:fillAlpha="0.18" />
+    <path android:pathData="M55,30 a11,11 0 1,0 22,0 a11,11 0 1,0 -22,0 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient android:type="linear" android:startX="66" android:startY="19" android:endX="66" android:endY="41" android:startColor="#FFF7DC" android:endColor="#FFB13A" />
+        </aapt:attr>
+    </path>
+    <path android:pathData="M19.0,62.0 a12.0,12.0 0 1,0 24.0,0 a12.0,12.0 0 1,0 -24.0,0 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient android:type="linear" android:startX="31.0" android:startY="50.0" android:endX="31.0" android:endY="74.0" android:startColor="#FBFEFF" android:endColor="#A9D4EE" />
+        </aapt:attr>
+    </path>
+    <path android:pathData="M28.0,53.0 a18.0,18.0 0 1,0 36.0,0 a18.0,18.0 0 1,0 -36.0,0 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient android:type="linear" android:startX="46" android:startY="35.0" android:endX="46" android:endY="71.0" android:startColor="#FBFEFF" android:endColor="#A9D4EE" />
+        </aapt:attr>
+    </path>
+    <path android:pathData="M51.0,63.0 a11.0,11.0 0 1,0 22.0,0 a11.0,11.0 0 1,0 -22.0,0 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient android:type="linear" android:startX="62.0" android:startY="52.0" android:endX="62.0" android:endY="74.0" android:startColor="#FBFEFF" android:endColor="#A9D4EE" />
+        </aapt:attr>
+    </path>
+    <path android:pathData="M38.0,60.0 H55.0 A7.0,7.0 0 0 1 62.0,67.0 V67.0 A7.0,7.0 0 0 1 55.0,74.0 H38.0 A7.0,7.0 0 0 1 31.0,67.0 V67.0 A7.0,7.0 0 0 1 38.0,60.0 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient android:type="linear" android:startX="31.0" android:startY="60.0" android:endX="31.0" android:endY="74.0" android:startColor="#FBFEFF" android:endColor="#A9D4EE" />
+        </aapt:attr>
+    </path>
+    <path android:pathData="M42,78 L39.8,90" android:strokeColor="#79D9FF" android:strokeWidth="4.2" android:strokeLineCap="round" />
+    <path android:pathData="M54,78 L51.8,90" android:strokeColor="#79D9FF" android:strokeWidth="4.2" android:strokeLineCap="round" />
+</vector>

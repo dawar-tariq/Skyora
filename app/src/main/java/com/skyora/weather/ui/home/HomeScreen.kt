@@ -79,6 +79,7 @@ import com.skyora.weather.ui.weather.WeatherDetailsContent
 import com.skyora.weather.ui.weather.WeatherLoadingSkeleton
 import com.skyora.weather.ui.weather.CachedWeatherBanner
 import com.skyora.weather.ui.designsystem.WeatherVisualFamily
+import com.skyora.weather.ui.designsystem.screenBottomPadding
 import com.skyora.weather.ui.designsystem.visualFamily
 import java.time.Instant
 import java.time.LocalDateTime
@@ -203,7 +204,7 @@ fun HomeScreen(
                     start = SkyoraSpacing.screen,
                     end = SkyoraSpacing.screen,
                     top = SkyoraSpacing.xs,
-                    bottom = LocalBottomBarInset.current + SkyoraSpacing.xxl,
+                    bottom = screenBottomPadding(extra = SkyoraSpacing.xxl),
                 ),
                 verticalArrangement = Arrangement.spacedBy(SkyoraSpacing.lg),
             ) {

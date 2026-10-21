@@ -131,6 +131,44 @@ class ForecastParsingTest {
     }
 
     @Test
+    fun `hourly night flags are derived from each hour, not the payload`() {
+        val payloadWithNight = """
+            {
+              "timezone": "UTC",
+              "utc_offset_seconds": 0,
+              "current": {"time": "2026-10-20T10:00", "temperature_2m": 15.0, "weather_code": 0, "is_day": 1},
+              "hourly": {
+                "time": ["2026-10-20T10:00", "2026-10-20T22:00"],
+                "temperature_2m": [16.0, 8.0],
+                "weather_code": [0, 0],
+                "precipitation_probability": [0, 0],
+                "is_day": [1, 1]
+              },
+              "daily": {
+                "time": ["2026-10-20"],
+                "weather_code": [0],
+                "temperature_2m_max": [18.0],
+                "temperature_2m_min": [6.0],
+                "sunrise": ["2026-10-20T06:30"],
+                "sunset": ["2026-10-20T17:30"],
+                "uv_index_max": [3.0]
+              }
+            }
+        """.trimIndent()
+        val dto = json.decodeFromString<ForecastResponseDto>(payloadWithNight)
+        val fetchTime = Instant.parse("2026-10-20T05:00:00Z").toEpochMilli()
+        val snapshot = ForecastMapper().map(dto, location, fetchTime)!!
+
+        val morning = snapshot.hourly.single { localHour(it.timeEpochMillis) == 10 }
+        val night = snapshot.hourly.single { localHour(it.timeEpochMillis) == 22 }
+        assertTrue("10:00 is after sunrise", morning.isDay)
+        assertTrue("22:00 is after sunset", !night.isDay)
+    }
+
+    private fun localHour(epochMillis: Long): Int =
+        Instant.ofEpochMilli(epochMillis).atZone(java.time.ZoneOffset.UTC).hour
+
+    @Test
     fun `a response without current conditions is rejected`() {
         val truncated = """{"hourly":{"time":[]},"daily":{"time":[]}}"""
         val dto = json.decodeFromString<ForecastResponseDto>(truncated)

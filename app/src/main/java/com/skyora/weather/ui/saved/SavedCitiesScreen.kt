@@ -64,6 +64,8 @@ import com.skyora.weather.ui.designsystem.SkyoraIconButton
 import com.skyora.weather.ui.designsystem.SkyoraPrimaryButton
 import com.skyora.weather.ui.designsystem.SkyoraSnackbarHost
 import com.skyora.weather.ui.designsystem.SkyoraTextButton
+import com.skyora.weather.ui.designsystem.WeatherIcon
+import com.skyora.weather.ui.designsystem.weatherIconRes
 import com.skyora.weather.ui.designsystem.WeatherVisualFamily
 import com.skyora.weather.ui.designsystem.screenBottomPadding
 import com.skyora.weather.ui.theme.LocalBottomBarInset
@@ -372,6 +374,12 @@ private fun SavedCityCard(
             Spacer(Modifier.width(SkyoraSpacing.sm))
             when {
                 snapshot != null -> {
+                    WeatherIcon(
+                        resId = weatherIconRes(snapshot),
+                        size = 30.dp,
+                        contentDescription = condition,
+                    )
+                    Spacer(Modifier.width(SkyoraSpacing.xs))
                     Column(horizontalAlignment = Alignment.End) {
                         Text(
                             text = temperature ?: stringResource(R.string.value_unavailable),

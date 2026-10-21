@@ -1,10 +1,12 @@
 package com.skyora.weather.ui.designsystem
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
@@ -17,6 +19,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathFillType
@@ -29,12 +32,16 @@ import androidx.compose.ui.unit.sp
 import com.skyora.weather.R
 import com.skyora.weather.ui.theme.Manrope
 import com.skyora.weather.ui.theme.SkyoraColors
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 
 /**
- * The SKYORA moon-and-cloud mark, drawn from the same geometry as the launcher
- * icon so the brand stays consistent from launcher to splash to top bar.
+ * The SKYORA moon-and-cloud mark.
+ *
+ * This is the same artwork as the launcher icon, exported once as a
+ * transparent PNG per density (`ic_brand_mark`) so the crescent and cloud are
+ * pixel-identical from the launcher to the splash screen to the top bar.
  */
 @Composable
 fun SkyoraMark(
@@ -48,66 +55,28 @@ fun SkyoraMark(
     } else {
         Modifier
     }
-    Canvas(modifier = modifier.size(size).then(semanticsModifier)) {
-        val unit = this.size.minDimension / 108f
-        fun p(x: Float, y: Float) = Offset(x * unit, y * unit)
-
+    Box(
+        modifier = modifier.size(size).then(semanticsModifier),
+        contentAlignment = Alignment.Center,
+    ) {
         if (showGlow) {
-            val glowCenter = p(60f, 42f)
-            drawCircle(
-                brush = Brush.radialGradient(
-                    colors = listOf(SkyoraColors.Cyan.copy(alpha = 0.30f), Color.Transparent),
-                    center = glowCenter,
-                    radius = 46f * unit,
-                ),
-                radius = 46f * unit,
-                center = glowCenter,
-            )
+            Canvas(modifier = Modifier.matchParentSize()) {
+                drawCircle(
+                    brush = Brush.radialGradient(
+                        colors = listOf(SkyoraColors.Cyan.copy(alpha = 0.22f), Color.Transparent),
+                        center = center,
+                        radius = this.size.minDimension * 0.52f,
+                    ),
+                    radius = this.size.minDimension * 0.52f,
+                    center = center,
+                )
+            }
         }
-
-        val moonOuter = Path().apply {
-            addOval(Rect(center = p(61f, 40f), radius = 15f * unit))
-        }
-        val moonCut = Path().apply {
-            addOval(Rect(center = p(69f, 33f), radius = 13f * unit))
-        }
-        val crescent = Path().apply {
-            fillType = PathFillType.EvenOdd
-            addPath(moonOuter)
-            addPath(moonCut)
-        }
-        drawPath(
-            path = crescent,
-            brush = Brush.linearGradient(
-                colors = listOf(Color(0xFFC9F7FF), Color(0xFF7FDCFF), Color(0xFF3B9FFF)),
-                start = p(50f, 26f),
-                end = p(72f, 56f),
-            ),
-        )
-
-        val cloudBrush = Brush.verticalGradient(
-            colors = listOf(Color(0xFFF2FDFF), Color(0xFF6DBAF7), Color(0xFF4A9BEA)),
-            startY = 48f * unit,
-            endY = 84f * unit,
-        )
-        drawCircle(cloudBrush, radius = 10f * unit, center = p(38f, 68f))
-        drawCircle(cloudBrush, radius = 13f * unit, center = p(53f, 62f))
-        drawCircle(cloudBrush, radius = 10f * unit, center = p(68f, 68f))
-        drawRoundRect(
-            brush = cloudBrush,
-            topLeft = p(37f, 66f),
-            size = Size(31f * unit, 14f * unit),
-            cornerRadius = CornerRadius(7f * unit),
-        )
-        // Soft highlight on the top of the cloud.
-        drawOval(
-            brush = Brush.radialGradient(
-                colors = listOf(Color.White.copy(alpha = 0.32f), Color.Transparent),
-                center = p(53f, 55f),
-                radius = 14f * unit,
-            ),
-            topLeft = p(39f, 49f),
-            size = Size(28f * unit, 14f * unit),
+        Image(
+            painter = painterResource(R.drawable.ic_brand_mark),
+            contentDescription = null,
+            modifier = Modifier.fillMaxSize(0.94f),
+            contentScale = ContentScale.Fit,
         )
     }
 }

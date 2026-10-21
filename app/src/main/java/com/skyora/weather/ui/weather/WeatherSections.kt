@@ -48,6 +48,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.skyora.weather.R
@@ -70,13 +71,15 @@ import com.skyora.weather.core.util.UpdateAge
 import com.skyora.weather.core.util.windDirectionLabel
 import com.skyora.weather.domain.model.TemperatureUnit
 import com.skyora.weather.domain.model.WeatherSnapshot
+import com.skyora.weather.domain.model.sunTimes
 import com.skyora.weather.domain.model.WmoWeatherCodes
 import com.skyora.weather.ui.designsystem.SaveCityChip
 import com.skyora.weather.ui.designsystem.SkyoraCard
+import com.skyora.weather.ui.designsystem.WeatherIcon
+import com.skyora.weather.ui.designsystem.weatherIconRes
 import com.skyora.weather.ui.designsystem.SkyoraDivider
 import com.skyora.weather.ui.designsystem.SkyoraSectionHeader
 import com.skyora.weather.ui.designsystem.SkyoraStatusChip
-import com.skyora.weather.ui.designsystem.WeatherGlyph
 import com.skyora.weather.ui.designsystem.labelRes
 import com.skyora.weather.ui.designsystem.uvCategoryLabelRes
 import com.skyora.weather.ui.designsystem.weatherDescriptionRes
@@ -177,10 +180,14 @@ fun WeatherHero(
                     color = SkyoraColors.TextSecondary,
                 )
             }
-            WeatherGlyph(
-                condition = condition,
-                isDay = current.isDay,
-                modifier = Modifier.size(62.dp),
+            WeatherIcon(
+                resId = weatherIconRes(
+                    condition = condition,
+                    epochMillis = current.timeEpochMillis,
+                    zone = zone,
+                    sunTimes = snapshot.sunTimes(),
+                ),
+                size = 62.dp,
                 contentDescription = description,
             )
         }
@@ -244,7 +251,7 @@ fun HourlyForecastCard(
                     timeEpochMillis = hour.timeEpochMillis,
                     temperatureC = hour.temperatureC,
                     weatherCode = hour.weatherCode,
-                    isDay = hour.isDay,
+                    iconRes = weatherIconRes(snapshot, hour),
                     precipitationProbability = hour.precipitationProbability,
                     unit = unit,
                     zone = zone,
@@ -260,7 +267,7 @@ private fun HourlyCell(
     timeEpochMillis: Long,
     temperatureC: Double,
     weatherCode: Int,
-    isDay: Boolean,
+    iconRes: Int,
     precipitationProbability: Int?,
     unit: TemperatureUnit,
     zone: ZoneId,
@@ -277,7 +284,7 @@ private fun HourlyCell(
     val chance = formatChance(precipitationProbability)
     val shape = RoundedCornerShape(16.dp)
     val cellModifier = Modifier
-        .width(58.dp)
+        .width(64.dp)
         .clip(shape)
         .background(if (isNow) SkyoraColors.Cyan.copy(alpha = 0.10f) else Color.Transparent)
         .then(
@@ -294,10 +301,9 @@ private fun HourlyCell(
             maxLines = 1,
         )
         Spacer(Modifier.height(8.dp))
-        WeatherGlyph(
-            condition = condition,
-            isDay = isDay,
-            modifier = Modifier.size(26.dp),
+        WeatherIcon(
+            resId = iconRes,
+            size = 26.dp,
             contentDescription = description,
         )
         Spacer(Modifier.height(8.dp))
@@ -306,6 +312,8 @@ private fun HourlyCell(
             style = MaterialTheme.typography.labelLarge,
             color = SkyoraColors.TextPrimary,
             maxLines = 1,
+            softWrap = false,
+            overflow = TextOverflow.Visible,
         )
         Spacer(Modifier.height(3.dp))
         if (chance != null && (precipitationProbability ?: 0) >= 20) {
@@ -365,17 +373,17 @@ fun DailyForecastCard(
                     text = dayLabel,
                     style = MaterialTheme.typography.bodyMedium,
                     color = if (date == today) SkyoraColors.CyanSoft else SkyoraColors.TextPrimary,
-                    modifier = Modifier.width(62.dp),
+                    modifier = Modifier.weight(0.9f),
                     maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                 )
-                WeatherGlyph(
-                    condition = condition,
-                    isDay = true,
-                    modifier = Modifier.size(26.dp),
+                WeatherIcon(
+                    resId = weatherIconRes(day),
+                    size = 26.dp,
                     contentDescription = description,
                 )
                 Row(
-                    modifier = Modifier.width(48.dp),
+                    modifier = Modifier.width(46.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.Start,
                 ) {
@@ -399,24 +407,26 @@ fun DailyForecastCard(
                     weekMinC = weekMin,
                     weekMaxC = weekMax,
                     modifier = Modifier
-                        .weight(1f)
+                        .weight(1.15f)
                         .height(4.dp)
-                        .padding(horizontal = 8.dp),
+                        .padding(horizontal = 6.dp),
                 )
                 Row(
-                    modifier = Modifier.width(80.dp),
+                    modifier = Modifier.weight(1f),
                     horizontalArrangement = Arrangement.End,
                 ) {
                     Text(
                         text = high,
                         style = MaterialTheme.typography.labelLarge,
                         color = SkyoraColors.TextPrimary,
+                        maxLines = 1,
                     )
-                    Spacer(Modifier.width(10.dp))
+                    Spacer(Modifier.width(8.dp))
                     Text(
                         text = low,
                         style = MaterialTheme.typography.labelLarge,
                         color = SkyoraColors.TextTertiary,
+                        maxLines = 1,
                     )
                 }
             }

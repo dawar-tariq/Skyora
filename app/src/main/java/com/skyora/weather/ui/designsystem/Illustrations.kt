@@ -42,7 +42,6 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.skyora.weather.domain.model.DefaultLocations
-import com.skyora.weather.domain.model.WeatherCondition
 import com.skyora.weather.ui.theme.SkyoraColors
 import com.skyora.weather.ui.theme.SkyoraTextStyles
 import androidx.compose.ui.res.stringResource
@@ -256,10 +255,9 @@ fun ForecastPreviewArt(modifier: Modifier = Modifier) {
                     color = SkyoraColors.TextPrimary,
                 )
             }
-            WeatherGlyph(
-                condition = WeatherCondition.PARTLY_CLOUDY,
-                isDay = true,
-                modifier = Modifier.size(54.dp),
+            WeatherIcon(
+                resId = R.drawable.weather_partly_cloudy_day,
+                size = 54.dp,
                 contentDescription = stringResource(R.string.weather_partly_cloudy),
             )
         }
@@ -286,10 +284,13 @@ fun ForecastPreviewArt(modifier: Modifier = Modifier) {
                         color = SkyoraColors.TextTertiary,
                     )
                     Spacer(Modifier.height(5.dp))
-                    WeatherGlyph(
-                        condition = if (index == 2) WeatherCondition.CLEAR else WeatherCondition.PARTLY_CLOUDY,
-                        isDay = true,
-                        modifier = Modifier.size(20.dp),
+                    WeatherIcon(
+                        resId = if (index == 2) {
+                            R.drawable.weather_clear_day
+                        } else {
+                            R.drawable.weather_partly_cloudy_day
+                        },
+                        size = 20.dp,
                     )
                     Spacer(Modifier.height(4.dp))
                     Text(

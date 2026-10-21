@@ -32,6 +32,11 @@ class WeatherRepositoryImpl(
     private val cacheStore: WeatherCacheStore,
     private val clock: Clock,
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
+    /**
+     * Invoked after a fresh snapshot is stored. AppContainer uses this to
+     * refresh home-screen widgets without coupling this class to Android UI.
+     */
+    private val onSnapshotStored: ((WeatherSnapshot) -> Unit)? = null,
 ) : WeatherRepository {
 
     private val cache = MutableStateFlow<Map<String, WeatherSnapshot>>(emptyMap())
@@ -70,6 +75,7 @@ class WeatherRepositoryImpl(
 
                 cacheStore.write(snapshot)
                 cache.update { it + (location.id to snapshot) }
+                onSnapshotStored?.invoke(snapshot)
                 WeatherResult.Success(snapshot)
             } catch (cancellation: CancellationException) {
                 throw cancellation
