@@ -94,6 +94,19 @@ class HourlyWindowTest {
     }
 
     @Test
+    fun `the hour in progress at the end of the series is still shown`() {
+        val list = hours(startHour = 18, count = 24) // last slot starts 17:00 next day
+        val upcoming = HourlyWindow.upcoming(list, at(41, 10), 24)
+        assertEquals(listOf(at(41)), upcoming.map { it.timeEpochMillis })
+    }
+
+    @Test
+    fun `the series drops out of the strip once its last hour has ended`() {
+        val list = hours(startHour = 18, count = 24)
+        assertTrue(HourlyWindow.upcoming(list, at(42, 1), 24).isEmpty())
+    }
+
+    @Test
     fun `consecutive hours stay consecutive after the window slides`() {
         val list = hours(startHour = 18, count = 24)
         val upcoming = HourlyWindow.upcoming(list, at(20, 40), 4)
