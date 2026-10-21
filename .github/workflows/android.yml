@@ -91,6 +91,30 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
 
+      - name: Publish test summary
+        if: always()
+        run: |
+          python3 - <<'PY' > test-summary.md || echo "no test results" > test-summary.md
+          import glob, xml.etree.ElementTree as ET
+          tests = failures = errors = skipped = 0
+          for f in glob.glob("app/build/test-results/testDebugUnitTest/*.xml"):
+              r = ET.parse(f).getroot()
+              tests += int(r.get("tests", 0)); failures += int(r.get("failures", 0))
+              errors += int(r.get("errors", 0)); skipped += int(r.get("skipped", 0))
+          passed = tests - failures - errors - skipped
+          print(f"{passed} passed, {failures + errors} failed, {skipped} skipped ({tests} total)")
+          PY
+          cat test-summary.md >> "$GITHUB_STEP_SUMMARY"
+          echo "**Unit tests:** $(cat test-summary.md)" >> "$GITHUB_STEP_SUMMARY"
+          STATE=success
+          grep -q "0 failed" test-summary.md || STATE=failure
+          gh api "repos/${GITHUB_REPOSITORY}/statuses/${GITHUB_SHA}" \
+            -f state="$STATE" -f context="unit-tests" \
+            -f description="$(cat test-summary.md | cut -c1-140)" \
+            -f target_url="https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}" > /dev/null || true
+        env:
+          GH_TOKEN: ${{ github.token }}
+
       - name: Upload build logs
         if: always()
         uses: actions/upload-artifact@v4
