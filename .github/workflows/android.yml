@@ -10,6 +10,10 @@ concurrency:
   group: android-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+  pull-requests: write
+
 jobs:
   build:
     name: Test and assemble debug APK
@@ -18,30 +22,41 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up JDK 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: "17"
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
-        with:
-          log-accepted-android-sdk-licenses: true
-
-      - name: Install SDK platform 35
-        run: sdkmanager "platforms;android-35" "build-tools;35.0.0" "platform-tools"
-
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
 
+      - name: Ensure SDK platform 35
+        run: |
+          set -x
+          SDK="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}}"
+          echo "ANDROID_HOME=$SDK" >> "$GITHUB_ENV"
+          echo "ANDROID_SDK_ROOT=$SDK" >> "$GITHUB_ENV"
+          echo "sdk.dir=$SDK" > local.properties
+          if [ -d "$SDK/platforms/android-35" ]; then
+            echo "android-35 already installed"
+          else
+            yes | "$SDK/cmdline-tools/latest/bin/sdkmanager" \
+              "platforms;android-35" "build-tools;35.0.0" "platform-tools"
+          fi
+          ls "$SDK/platforms"
+
       - name: Unit tests
-        run: ./gradlew --no-daemon --stacktrace testDebugUnitTest
+        run: |
+          set -o pipefail
+          ./gradlew --no-daemon --stacktrace --console=plain testDebugUnitTest 2>&1 | tee gradle-test.log
 
       - name: Assemble debug APK
-        run: ./gradlew --no-daemon --stacktrace assembleDebug
+        run: |
+          set -o pipefail
+          ./gradlew --no-daemon --stacktrace --console=plain assembleDebug 2>&1 | tee gradle-assemble.log
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
@@ -51,12 +66,36 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
-      - name: Upload test report on failure
-        if: failure()
+      - name: Upload build logs
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: test-report
+          name: build-logs
           path: |
+            gradle-test.log
+            gradle-assemble.log
             app/build/reports/tests/**
             app/build/test-results/**
           if-no-files-found: ignore
+
+      - name: Publish failure summary
+        if: failure()
+        run: |
+          {
+            echo "## Build failed"
+            echo '```'
+            tail -n 120 gradle-assemble.log 2>/dev/null || tail -n 120 gradle-test.log 2>/dev/null || echo "no gradle log captured"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          PR=$(gh pr list --head "$GITHUB_REF_NAME" --state open --json number -q '.[0].number' 2>/dev/null || true)
+          if [ -n "$PR" ]; then
+            {
+              echo "Build failed for \`$GITHUB_SHA\`."
+              echo '```'
+              tail -n 120 gradle-assemble.log 2>/dev/null || tail -n 120 gradle-test.log 2>/dev/null || echo "no gradle log captured"
+              echo '```'
+            } > failure.txt
+            gh pr comment "$PR" --body-file failure.txt
+          fi
+        env:
+          GH_TOKEN: ${{ github.token }}
