@@ -21,11 +21,21 @@ import com.skyora.weather.domain.model.WeatherSnapshot
 import com.skyora.weather.domain.repository.PreferencesRepository
 import com.skyora.weather.domain.repository.SavedCitiesRepository
 import com.skyora.weather.domain.repository.WeatherRepository
+import com.skyora.weather.domain.widget.WidgetNudgeRules
+import com.skyora.weather.domain.widget.WidgetNudgeState
+import com.skyora.weather.domain.widget.WidgetRefreshStatus
+import com.skyora.weather.widget.WidgetRefreshStatusStore
+import com.skyora.weather.widget.WidgetUpdater
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
@@ -33,6 +43,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import java.time.Clock
 
@@ -48,6 +59,12 @@ data class HomeUiState(
     val isOnline: Boolean = true,
     val isSaved: Boolean = false,
     val locationAccess: LocationAccessState = LocationAccessState.Idle,
+    /** Widget health, for the Settings gear dot. */
+    val widgetNeedsAttention: Boolean = false,
+    /** Whether the "your widget isn't updating" banner should be on screen. */
+    val showWidgetBanner: Boolean = false,
+    /** How old the widget's data is, for the banner copy. */
+    val widgetDataAgeMillis: Long = 0L,
 ) {
     val isLocating: Boolean get() = locationAccess is LocationAccessState.Locating
 
@@ -76,6 +93,9 @@ class HomeViewModel(
     private val weatherRepository: WeatherRepository,
     private val locationCoordinator: LocationCoordinator,
     private val networkMonitor: NetworkMonitor,
+    private val widgetStatusStore: WidgetRefreshStatusStore,
+    /** Whether a widget is placed; a lambda keeps Android types out of the VM. */
+    private val hasWidgets: () -> Boolean,
     private val clock: Clock,
 ) : ViewModel() {
 
@@ -96,6 +116,7 @@ class HomeViewModel(
         observeSavedCities()
         observeConnectivity()
         observeLocationAccess()
+        observeWidgetAttention()
     }
 
     private fun observePreferences() {
@@ -181,6 +202,79 @@ class HomeViewModel(
                     LocationAccessState.Idle -> Unit
                 }
             }
+        }
+    }
+
+    /**
+     * Decides whether to mention that the widget stopped refreshing.
+     *
+     * The ticker matters: without it a user who leaves Home open would keep
+     * seeing a healthy app after the background job died. It is a 60-second
+     * timer over an in-memory journal, not a network call.
+     */
+    private fun observeWidgetAttention() {
+        viewModelScope.launch {
+            combine(
+                widgetStatusStore.status,
+                widgetStatusStore.nudge,
+                ticker(),
+                networkMonitor.isOnline,
+            ) { status, nudge, now, online -> WidgetSignal(status, nudge, now, online) }
+                .collect { (status, nudge, now, online) ->
+                    val widgets = withContext(Dispatchers.Default) {
+                        runCatching { hasWidgets() }.getOrDefault(false)
+                    }
+                    val interval = WidgetUpdater.PERIOD_MINUTES
+                    val attention = WidgetNudgeRules.needsAttention(
+                        status = status,
+                        nowMillis = now,
+                        requestedIntervalMinutes = interval,
+                        hasWidgets = widgets,
+                        isOnline = online,
+                    )
+                    val showBanner = WidgetNudgeRules.shouldShowBanner(
+                        status = status,
+                        nudge = nudge,
+                        nowMillis = now,
+                        requestedIntervalMinutes = interval,
+                        hasWidgets = widgets,
+                        isOnline = online,
+                    )
+                    _state.update { current ->
+                        current.copy(
+                            widgetNeedsAttention = attention,
+                            showWidgetBanner = showBanner,
+                            widgetDataAgeMillis = if (status.lastSuccessMillis > 0L) {
+                                (now - status.lastSuccessMillis).coerceAtLeast(0L)
+                            } else {
+                                0L
+                            },
+                        )
+                    }
+                }
+        }
+    }
+
+    /** One evaluation of "should we mention the widget?" with all its inputs. */
+    private data class WidgetSignal(
+        val status: WidgetRefreshStatus,
+        val nudge: WidgetNudgeState,
+        val nowMillis: Long,
+        val isOnline: Boolean,
+    )
+
+    private fun ticker(): Flow<Long> = flow {
+        while (true) {
+            emit(clock.millis())
+            delay(60_000L)
+        }
+    }
+
+    /** Hides the banner for this episode (see [WidgetNudgeRules]). */
+    fun dismissWidgetBanner() {
+        _state.update { it.copy(showWidgetBanner = false) }
+        viewModelScope.launch {
+            widgetStatusStore.dismissNudge(clock.millis())
         }
     }
 
@@ -332,6 +426,8 @@ class HomeViewModel(
                     weatherRepository = container.weatherRepository,
                     locationCoordinator = container.locationCoordinator,
                     networkMonitor = container.networkMonitor,
+                    widgetStatusStore = container.widgetRefreshStatusStore,
+                    hasWidgets = { WidgetUpdater.hasWidgets(container.context) },
                     clock = container.clock,
                 )
             }

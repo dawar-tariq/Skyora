@@ -511,5 +511,13 @@
     <string name="reliability_disclaimer">These screens differ between devices and versions; SKYORA cannot change these settings for you.</string>
     <string name="settings_widgets">Widgets</string>
     <string name="settings_widget_reliability">Widget reliability</string>
+    <string name="settings_widget_reliability_attention">Background updates are behind — open to see why.</string>
     <string name="settings_widget_reliability_desc">Refresh history, background limits and per-device guidance.</string>
+
+    <!-- Home: "your widget stopped updating" (shown only while the journal says so) -->
+    <string name="home_widget_stale_title">Your widget isn\'t updating</string>
+    <string name="home_widget_stale_body">The home-screen widget last refreshed %1$s. Some phones limit background updates to save battery.</string>
+    <string name="home_widget_stale_body_never">The home-screen widget hasn\'t refreshed yet. Some phones limit background updates to save battery.</string>
+    <string name="home_widget_stale_action">See why</string>
+    <string name="cd_settings_widget_attention">Settings — widget needs attention</string>
 </resources>

@@ -21,6 +21,7 @@ import androidx.compose.material.icons.outlined.CloudOff
 import androidx.compose.material.icons.outlined.MyLocation
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material.icons.outlined.Widgets
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarDuration
@@ -96,6 +97,7 @@ fun HomeScreen(
     onOpenSearch: () -> Unit,
     onOpenSettings: () -> Unit,
     onChooseCity: () -> Unit,
+    onOpenWidgetReliability: () -> Unit,
 ) {
     val viewModel: HomeViewModel = viewModel(factory = HomeViewModel.factory(container))
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -261,6 +263,25 @@ fun HomeScreen(
                     }
                 }
 
+                if (state.showWidgetBanner) {
+                    item(key = "widget-stale-banner") {
+                        val ageLabel = widgetAgeLabel(state.widgetDataAgeMillis)
+                        SkyoraBanner(
+                            title = stringResource(R.string.home_widget_stale_title),
+                            message = if (ageLabel == null) {
+                                stringResource(R.string.home_widget_stale_body_never)
+                            } else {
+                                stringResource(R.string.home_widget_stale_body, ageLabel)
+                            },
+                            icon = Icons.Outlined.Widgets,
+                            tone = BannerTone.WARNING,
+                            actionLabel = stringResource(R.string.home_widget_stale_action),
+                            onAction = onOpenWidgetReliability,
+                            onDismiss = viewModel::dismissWidgetBanner,
+                        )
+                    }
+                }
+
                 val snapshot = state.snapshot
                 when {
                     snapshot != null -> {
@@ -318,6 +339,22 @@ fun HomeScreen(
     }
 }
 
+/**
+ * "6 h ago" for the stale-widget banner, or `null` when the widget has never
+ * had a successful refresh (the copy differs rather than inventing an age).
+ */
+@Composable
+private fun widgetAgeLabel(ageMillis: Long): String? {
+    if (ageMillis <= 0L) return null
+    val minutes = (ageMillis / 60_000L).toInt()
+    return when {
+        minutes < 1 -> stringResource(R.string.widget_updated_just_now)
+        minutes < 60 -> stringResource(R.string.widget_updated_minutes, minutes)
+        minutes < 24 * 60 -> stringResource(R.string.widget_updated_hours, minutes / 60)
+        else -> stringResource(R.string.widget_updated_older)
+    }
+}
+
 @Composable
 private fun HomeHeader(
     state: HomeUiState,
@@ -359,8 +396,13 @@ private fun HomeHeader(
             Spacer(Modifier.width(SkyoraSpacing.xxs))
             SkyoraIconButton(
                 icon = Icons.Outlined.Settings,
-                contentDescription = stringResource(R.string.cd_settings),
+                contentDescription = if (state.widgetNeedsAttention) {
+                    stringResource(R.string.cd_settings_widget_attention)
+                } else {
+                    stringResource(R.string.cd_settings)
+                },
                 onClick = onOpenSettings,
+                badge = state.widgetNeedsAttention,
             )
         }
 

@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
@@ -148,24 +149,44 @@ fun SkyoraIconButton(
     containerColor: Color = SkyoraColors.Navy.copy(alpha = 0.55f),
     showBorder: Boolean = true,
     enabled: Boolean = true,
+    /** Small dot in the corner: something behind this button wants attention. */
+    badge: Boolean = false,
 ) {
-    IconButton(
-        onClick = onClick,
-        enabled = enabled,
-        modifier = modifier
-            .size(SkyoraSizes.iconButton)
-            .clip(CircleShape)
-            .background(containerColor)
-            .then(
-                if (showBorder) Modifier.border(1.dp, SkyoraColors.Border, CircleShape) else Modifier,
-            ),
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = contentDescription,
-            tint = if (enabled) tint else tint.copy(alpha = 0.4f),
-            modifier = Modifier.size(20.dp),
-        )
+    Box(modifier = modifier.size(SkyoraSizes.iconButton)) {
+        IconButton(
+            onClick = onClick,
+            enabled = enabled,
+            modifier = Modifier
+                .fillMaxSize()
+                .clip(CircleShape)
+                .background(containerColor)
+                .then(
+                    if (showBorder) {
+                        Modifier.border(1.dp, SkyoraColors.Border, CircleShape)
+                    } else {
+                        Modifier
+                    },
+                ),
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = contentDescription,
+                tint = if (enabled) tint else tint.copy(alpha = 0.4f),
+                modifier = Modifier.size(20.dp),
+            )
+        }
+        if (badge) {
+            // Decorative: the state is already in the button's description.
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(top = 9.dp, end = 9.dp)
+                    .size(8.dp)
+                    .clip(CircleShape)
+                    .background(SkyoraColors.Cyan)
+                    .border(1.5.dp, SkyoraColors.Ink.copy(alpha = 0.9f), CircleShape),
+            )
+        }
     }
 }
 

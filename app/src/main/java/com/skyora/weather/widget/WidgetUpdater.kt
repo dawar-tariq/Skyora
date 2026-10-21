@@ -110,6 +110,12 @@ object WidgetUpdater {
         WorkManager.getInstance(context).cancelUniqueWork(UNIQUE_PERIODIC)
     }
 
+    /** Whether any SKYORA widget is currently on a home screen. */
+    fun hasWidgets(context: Context): Boolean {
+        val manager = AppWidgetManager.getInstance(context) ?: return false
+        return allWidgetIds(context, manager).isNotEmpty()
+    }
+
     fun allWidgetIds(context: Context, manager: AppWidgetManager): IntArray =
         manager.getAppWidgetIds(ComponentName(context, CompactWeatherWidgetProvider::class.java)) +
             manager.getAppWidgetIds(ComponentName(context, ForecastWeatherWidgetProvider::class.java))
