@@ -18,9 +18,15 @@ class HourlyWindowTest {
     private val zone: ZoneId = ZoneId.of("Asia/Kolkata")
     private val hourMs = 3_600_000L
 
+    /** 2026-10-21 [hour]:[minute] IST, rolled over into the next day when needed. */
     private fun at(hour: Int, minute: Int = 0): Long =
-        ZonedDateTime.of(2026, 10, 21, hour, minute, 0, 0, zone).toInstant().toEpochMilli()
+        ZonedDateTime.of(2026, 10, 21, 0, 0, 0, 0, zone)
+            .plusHours(hour.toLong())
+            .plusMinutes(minute.toLong())
+            .toInstant()
+            .toEpochMilli()
 
+    /** Consecutive hourly slots starting at [startHour] (may cross midnight). */
     private fun hours(startHour: Int, count: Int): List<HourlyForecast> =
         (0 until count).map { offset ->
             HourlyForecast(
