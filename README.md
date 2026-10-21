@@ -10,12 +10,19 @@ A native Android weather app built with Kotlin, Jetpack Compose and Material 3. 
 
 | | |
 |---|---|
-| Source | Complete: 66 app Kotlin sources + 3 test files, 8 screens, 8 ViewModels, 3 repositories, 338 strings |
-| Android build | **Not executed in the authoring environment** (no Android SDK / Google Maven access). See [Verification](#verification) for exactly what was and was not run. |
-| Unit tests | 27 JVM tests in `app/src/test`; their assertions were executed in a JVM harness against the compiled domain/data classes and all passed. |
+| Source | 66 app Kotlin sources + 3 test files, 8 screens, 8 ViewModels, 3 repositories, 338 strings |
+| Android build | **Verified on GitHub Actions** (ubuntu-latest, JDK 17, Android SDK 35): `testDebugUnitTest` and `assembleDebug` both pass. |
+| APK | Produced by CI as the `skyora-debug-apk` artifact (debug-signed, installable). |
+| Unit tests | 27 JVM tests in `app/src/test`, executed by CI: **all pass**. |
 | Notifications | Deliberately out of scope for this release; the seam exists (`WeatherAlertScheduler` + `NoOpWeatherAlertScheduler`). |
 
-Do not treat this repository as a tested APK. Treat it as complete, reviewed source with a verified pure-Kotlin core.
+## Get the app
+
+1. Open the repo's **Actions** tab → latest green **Android** run on `main` (or on the PR).
+2. Download the **`skyora-debug-apk`** artifact (a zip containing `app-debug.apk`, ~18 MB).
+3. Unzip and install on a device running Android 8.0 (API 26) or newer. You will need to allow "install unknown apps" for your browser/file manager, since the APK is debug-signed rather than Play-signed.
+
+Or build it yourself with the commands in [Build & run](#build--run).
 
 ---
 
@@ -146,7 +153,9 @@ echo "sdk.dir=/path/to/Android/Sdk" > local.properties
 
 ## Verification
 
-What was actually checked in the authoring sandbox:
+**Continuous integration (the authoritative check):** `.github/workflows/android.yml` runs on every push. It installs JDK 17 and Android SDK 35, then runs `./gradlew testDebugUnitTest` and `./gradlew assembleDebug`, publishing the APK and build logs as artifacts. The current head of this branch is green: unit tests pass and an installable debug APK is produced.
+
+Static and local checks performed during development:
 
 * All 66 Kotlin files parse without syntax errors (tree-sitter Kotlin grammar).
 * Every `R.string.*`, colour, font, drawable, mipmap and icon reference resolves to a declared resource or a `material-icons-extended` symbol.
@@ -154,8 +163,9 @@ What was actually checked in the authoring sandbox:
 * Domain and data layers were compiled with the Kotlin JVM compiler and executed through a standalone harness (~90 assertions): formatting, location identity and route encoding, DTO → snapshot mapping, cache hits/force refresh/timeouts, geocoding dedupe and cache, preferences, saved-city ordering/removal/undo, cache pruning and the location coordinator.
 * The 27 unit tests in `app/src/test` were compiled and executed against that same compiled code with a JUnit-compatible harness: **all passed**.
 * Bugs found and fixed during review include a wrong hourly index for “current visibility”, a missing `LaunchedEffect` import, a token used from the wrong design-system object, auto-mirrored icon imports, and a `kotlin { }` block nested inside `android { }` in the build script.
+* Bugs the first real build caught (all fixed): the Compose BOM was added as a plain dependency instead of `platform(...)`, so `material3` and `material-icons-extended` resolved with an empty version; `LocalBottomBarInset` was read without `.current`; `SkyoraSizes` was missing from `Surface.kt`'s imports; `Address.country` does not exist (it is `countryName`).
 
-What was **not** done: a real Gradle/Android build, Compose rendering or screenshot tests, instrumentation tests, and any on-device run. Compose APIs follow stable Material 3 / Compose 1.7 signatures, but only compilation on a machine with the Android SDK can prove the UI layer builds.
+What was **not** done: no rendering/screenshot tests, no instrumentation tests, and no on-device run — the app has been compiled and packaged, not visually exercised. Expect to smoke-test layout on a real device before release.
 
 ---
 
