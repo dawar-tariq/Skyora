@@ -485,7 +485,8 @@
     <string name="reliability_section_system">System restrictions</string>
     <string name="reliability_battery_optimized">Battery optimization</string>
     <string name="reliability_battery_unrestricted">Unrestricted</string>
-    <string name="reliability_battery_restricted">Optimized (may delay refresh)</string>
+    <string name="reliability_battery_restricted">Optimized</string>
+    <string name="reliability_battery_note">Optimized battery usage is the normal, recommended state; Android may just delay a refresh by a few minutes.</string>
     <string name="reliability_battery_unknown">Not reported by this device</string>
     <string name="reliability_background_usage">Background usage</string>
     <string name="reliability_background_restricted">Limited by the system</string>

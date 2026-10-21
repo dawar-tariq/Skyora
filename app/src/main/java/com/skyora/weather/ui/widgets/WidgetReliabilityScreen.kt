@@ -33,6 +33,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
@@ -209,6 +210,14 @@ fun WidgetReliabilityScreen(
                             SkyoraColors.TextSecondary
                         },
                     )
+                    if (state.batteryUnrestricted == false) {
+                        Text(
+                            text = stringResource(R.string.reliability_battery_note),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = SkyoraColors.TextTertiary,
+                            modifier = Modifier.padding(top = SkyoraSpacing.xxs),
+                        )
+                    }
                     if (state.backgroundRestricted != null) {
                         SkyoraDivider(modifier = Modifier.padding(vertical = SkyoraSpacing.xs))
                         StatusLine(
@@ -335,10 +344,16 @@ private fun StatusLine(
             color = SkyoraColors.TextSecondary,
             modifier = Modifier.weight(1f),
         )
+        // Both sides get a weight so a long value ("Optimized (may delay
+        // refresh)") cannot push the label to zero width or overlap it; it wraps
+        // to a second line instead.
         Text(
             text = value,
             style = MaterialTheme.typography.bodyMedium,
             color = tone,
+            textAlign = TextAlign.End,
+            maxLines = 2,
+            modifier = Modifier.weight(1f),
         )
     }
 }
