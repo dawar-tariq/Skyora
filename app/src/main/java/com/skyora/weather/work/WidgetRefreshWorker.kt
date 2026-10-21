@@ -49,22 +49,29 @@ class WidgetRefreshWorker(
 
         // Fetch each distinct city once, then render every widget that uses it.
         // A widget without an explicit city follows the selected city.
-        val fallback = container.preferencesRepository.preferences.first().selectedLocation
-        val ids = compactIds.toList() + forecastIds.toList()
-        val locations = ids.map { id -> id to (widgetPrefs.locationFor(id) ?: fallback) }
+        // Refreshes triggered by these fetches are suppressed so this worker is
+        // not replaced (and cancelled) by its own unique-work request.
+        WidgetUpdater.beginInternalRefresh()
         var hadNetworkFailure = false
-        locations.map { it.second }.distinctBy { it.id }.forEach { location ->
-            when (container.weatherRepository.loadWeather(location)) {
-                is WeatherResult.Success -> Unit
-                is WeatherResult.Failure -> hadNetworkFailure = true
+        try {
+            val fallback = container.preferencesRepository.preferences.first().selectedLocation
+            val ids = compactIds.toList() + forecastIds.toList()
+            val locations = ids.map { id -> id to (widgetPrefs.locationFor(id) ?: fallback) }
+            locations.map { it.second }.distinctBy { it.id }.forEach { location ->
+                when (container.weatherRepository.loadWeather(location)) {
+                    is WeatherResult.Success -> Unit
+                    is WeatherResult.Failure -> hadNetworkFailure = true
+                }
             }
-        }
 
-        compactIds.forEach { id ->
-            WidgetRenderer.update(applicationContext, container, manager, id, isForecast = false)
-        }
-        forecastIds.forEach { id ->
-            WidgetRenderer.update(applicationContext, container, manager, id, isForecast = true)
+            compactIds.forEach { id ->
+                WidgetRenderer.update(applicationContext, container, manager, id, isForecast = false)
+            }
+            forecastIds.forEach { id ->
+                WidgetRenderer.update(applicationContext, container, manager, id, isForecast = true)
+            }
+        } finally {
+            WidgetUpdater.endInternalRefresh()
         }
 
         // Retry with backoff only when a fetch actually failed; cached data was

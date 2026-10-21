@@ -33,7 +33,25 @@ object WidgetUpdater {
     private const val UNIQUE_PERIODIC = "skyora_widget_periodic"
     private const val PERIOD_MINUTES = 60L
 
+    /**
+     * Set while [com.skyora.weather.work.WidgetRefreshWorker] is fetching and
+     * rendering. A fetch stores a snapshot, which normally triggers a refresh;
+     * re-enqueueing the same unique work from inside it would cancel the
+     * running worker before it renders, so that callback is ignored here.
+     */
+    @Volatile
+    private var internalRefreshRunning = false
+
+    fun beginInternalRefresh() {
+        internalRefreshRunning = true
+    }
+
+    fun endInternalRefresh() {
+        internalRefreshRunning = false
+    }
+
     fun refreshNow(context: Context) {
+        if (internalRefreshRunning) return
         val manager = AppWidgetManager.getInstance(context) ?: return
         val ids = allWidgetIds(context, manager)
         if (ids.isEmpty()) return
