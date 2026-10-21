@@ -81,18 +81,27 @@ jobs:
       - name: Publish failure summary
         if: failure()
         run: |
+          LOG=$(ls gradle-assemble.log gradle-test.log 2>/dev/null | tail -n 1)
           {
             echo "## Build failed"
             echo '```'
-            tail -n 120 gradle-assemble.log 2>/dev/null || tail -n 120 gradle-test.log 2>/dev/null || echo "no gradle log captured"
+            tail -n 120 "$LOG" 2>/dev/null || echo "no gradle log captured"
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
-          PR=$(gh pr list --head "$GITHUB_REF_NAME" --state open --json number -q '.[0].number' 2>/dev/null || true)
+
+          # Surface compiler/test errors as annotations (readable through the API).
+          grep -a -m 12 -E "^e: |error:|FAILED|Execution failed|Caused by:" "$LOG" 2>/dev/null \
+            | sed -e 's/%/%25/g' -e 's/\r//g' -e 's/^/::error::/' || true
+
+          PR="${{ github.event.pull_request.number }}"
+          if [ -z "$PR" ]; then
+            PR=$(gh pr list --head "${GITHUB_HEAD_REF:-$GITHUB_REF_NAME}" --state open --json number -q '.[0].number' 2>/dev/null || true)
+          fi
           if [ -n "$PR" ]; then
             {
               echo "Build failed for \`$GITHUB_SHA\`."
               echo '```'
-              tail -n 120 gradle-assemble.log 2>/dev/null || tail -n 120 gradle-test.log 2>/dev/null || echo "no gradle log captured"
+              tail -n 120 "$LOG" 2>/dev/null || echo "no gradle log captured"
               echo '```'
             } > failure.txt
             gh pr comment "$PR" --body-file failure.txt
