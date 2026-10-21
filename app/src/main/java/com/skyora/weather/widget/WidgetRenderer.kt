@@ -5,6 +5,7 @@ import android.appwidget.AppWidgetManager
 import android.content.Context
 import android.content.Intent
 import android.view.View
+import androidx.core.content.ContextCompat
 import android.widget.RemoteViews
 import com.skyora.weather.MainActivity
 import com.skyora.weather.R
@@ -39,6 +40,26 @@ object WidgetRenderer {
     private const val NARROW_DP = 220
     private const val SHORT_DP = 130
     private const val SHOW_FOURTH_HOUR_DP = 280
+
+    /** Keeps the status-line PendingIntent distinct from the card's own. */
+    private const val STATUS_LINE_REQUEST_OFFSET = 500_000
+
+    /**
+     * Older than two requested refresh windows.
+     *
+     * Derived from the snapshot's own fetch time — the same number the line
+     * prints — rather than from the background journal, because the widget is
+     * asked "is what you show old?", not "did the worker run?".
+     */
+    internal fun isStale(
+        snapshot: WeatherSnapshot?,
+        nowMillis: Long = System.currentTimeMillis(),
+        intervalMinutes: Long = WidgetUpdater.PERIOD_MINUTES,
+    ): Boolean {
+        if (snapshot == null) return false
+        val age = nowMillis - snapshot.fetchedAtEpochMillis
+        return age > intervalMinutes * 60_000L * 2
+    }
 
     suspend fun update(
         context: Context,
@@ -77,6 +98,37 @@ object WidgetRenderer {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
         views.setOnClickPendingIntent(R.id.widget_root, pending)
+
+        // When the data is old, the "Updated … ago" line is the user's question
+        // ("why?"). Give it its own target so it answers that question instead
+        // of opening a forecast that is already on screen behind the widget.
+        // On fresh data the line keeps opening the city like the rest of the card.
+        val stale = isStale(snapshot)
+        val statusIntent = if (stale) {
+            Intent(context, MainActivity::class.java).apply {
+                putExtra(MainActivity.EXTRA_OPEN_RELIABILITY, true)
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            }
+        } else {
+            openIntent
+        }
+        views.setOnClickPendingIntent(
+            R.id.widget_updated,
+            PendingIntent.getActivity(
+                context,
+                appWidgetId + STATUS_LINE_REQUEST_OFFSET,
+                statusIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+            ),
+        )
+        views.setTextColor(
+            R.id.widget_updated,
+            ContextCompat.getColor(
+                context,
+                if (stale) R.color.skyora_cyan else R.color.skyora_widget_muted,
+            ),
+        )
+
         appWidgetManager.updateAppWidget(appWidgetId, views)
     }
 

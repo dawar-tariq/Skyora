@@ -5,6 +5,7 @@ import android.provider.Settings
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -87,6 +88,9 @@ fun WidgetReliabilityScreen(
 
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.refresh() }
 
+    val needsHelp = state.health == WidgetRefreshHealth.STALE ||
+        state.health == WidgetRefreshHealth.RETRYING
+
     fun report(count: Int) {
         scope.launch {
             val message = when {
@@ -128,185 +132,60 @@ fun WidgetReliabilityScreen(
             }
 
             item(key = "intro") {
-                Text(
-                    text = stringResource(R.string.reliability_intro),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = SkyoraColors.TextTertiary,
-                )
-            }
-
-            item(key = "refresh") {
-                SkyoraCard(modifier = Modifier.fillMaxWidth()) {
-                    SkyoraSectionLabel(text = stringResource(R.string.reliability_section_refresh))
-                    Spacer(Modifier.height(SkyoraSpacing.xs))
-                    StatusLine(
-                        icon = Icons.Outlined.Refresh,
-                        label = stringResource(R.string.reliability_last_success),
-                        value = lastSuccessLabel(state),
-                        tone = when (state.health) {
-                            WidgetRefreshHealth.HEALTHY -> SkyoraColors.CyanSoft
-                            WidgetRefreshHealth.RETRYING,
-                            WidgetRefreshHealth.STALE,
-                            -> SkyoraColors.Warning
-
-                            WidgetRefreshHealth.NEVER_RAN -> SkyoraColors.TextSecondary
-                        },
-                    )
-                    SkyoraDivider(modifier = Modifier.padding(vertical = SkyoraSpacing.xs))
-                    StatusLine(
-                        icon = Icons.Outlined.Schedule,
-                        label = stringResource(R.string.reliability_last_outcome),
-                        value = outcomeLabel(state),
-                        tone = if (state.status.outcome == WidgetRefreshOutcome.FAILED) {
-                            SkyoraColors.Warning
-                        } else {
-                            SkyoraColors.TextSecondary
-                        },
-                    )
-                    SkyoraDivider(modifier = Modifier.padding(vertical = SkyoraSpacing.xs))
-                    StatusLine(
-                        icon = Icons.Outlined.Schedule,
-                        label = stringResource(R.string.reliability_work_state),
-                        value = workStateLabel(state),
-                        tone = SkyoraColors.TextSecondary,
-                    )
-                    SkyoraDivider(modifier = Modifier.padding(vertical = SkyoraSpacing.xs))
-                    StatusLine(
-                        icon = Icons.Outlined.Schedule,
-                        label = stringResource(R.string.reliability_interval),
-                        value = stringResource(R.string.reliability_interval_value, state.intervalMinutes.toInt()),
-                        tone = SkyoraColors.TextSecondary,
-                    )
-                    Spacer(Modifier.height(SkyoraSpacing.xs))
+                Column(verticalArrangement = Arrangement.spacedBy(SkyoraSpacing.xs)) {
                     Text(
-                        text = stringResource(R.string.reliability_interval_note),
+                        text = stringResource(R.string.reliability_intro),
                         style = MaterialTheme.typography.bodySmall,
                         color = SkyoraColors.TextTertiary,
                     )
-                    Spacer(Modifier.height(SkyoraSpacing.sm))
-                    Text(
-                        text = healthLabel(state),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = SkyoraColors.TextSecondary,
-                    )
+                    if (needsHelp) {
+                        // Say the symptom in the same words the Home banner used,
+                        // so the user knows they are in the right place.
+                        Text(
+                            text = healthLabel(state),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = SkyoraColors.Warning,
+                        )
+                    }
                 }
             }
 
-            item(key = "system") {
-                SkyoraCard(modifier = Modifier.fillMaxWidth()) {
-                    SkyoraSectionLabel(text = stringResource(R.string.reliability_section_system))
-                    Spacer(Modifier.height(SkyoraSpacing.xs))
-                    StatusLine(
-                        icon = Icons.Outlined.BatteryAlert,
-                        label = stringResource(R.string.reliability_battery_optimized),
-                        value = when (state.batteryUnrestricted) {
-                            true -> stringResource(R.string.reliability_battery_unrestricted)
-                            false -> stringResource(R.string.reliability_battery_restricted)
-                            null -> stringResource(R.string.reliability_battery_unknown)
-                        },
-                        tone = if (state.batteryUnrestricted == false) {
-                            SkyoraColors.Warning
-                        } else {
-                            SkyoraColors.TextSecondary
-                        },
-                    )
-                    if (state.batteryUnrestricted == false) {
-                        Text(
-                            text = stringResource(R.string.reliability_battery_note),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = SkyoraColors.TextTertiary,
-                            modifier = Modifier.padding(top = SkyoraSpacing.xxs),
-                        )
-                    }
-                    if (state.backgroundRestricted != null) {
-                        SkyoraDivider(modifier = Modifier.padding(vertical = SkyoraSpacing.xs))
-                        StatusLine(
-                            icon = Icons.Outlined.BatteryAlert,
-                            label = stringResource(R.string.reliability_background_usage),
-                            value = stringResource(
-                                if (state.backgroundRestricted == true) {
-                                    R.string.reliability_background_restricted
-                                } else {
-                                    R.string.reliability_background_allowed
-                                },
-                            ),
-                            tone = if (state.backgroundRestricted == true) {
-                                SkyoraColors.Warning
-                            } else {
-                                SkyoraColors.TextSecondary
-                            },
-                        )
-                    }
-                    SkyoraDivider(modifier = Modifier.padding(vertical = SkyoraSpacing.xs))
-                    StatusLine(
-                        icon = Icons.Outlined.Widgets,
-                        label = stringResource(R.string.reliability_widget_count),
-                        value = state.widgetCount.toString(),
-                        tone = SkyoraColors.TextSecondary,
-                    )
-                }
+            // Ordering is the point: someone who arrived because the widget
+            // stopped updating needs the fix first, while someone browsing the
+            // page wants the numbers first.
+            val order = if (needsHelp) {
+                listOf(Section.HELP, Section.ACTION, Section.REFRESH, Section.SYSTEM)
+            } else {
+                listOf(Section.REFRESH, Section.SYSTEM, Section.HELP, Section.ACTION)
             }
-
-            item(key = "help") {
-                SkyoraCard(modifier = Modifier.fillMaxWidth()) {
-                    SkyoraSectionLabel(text = stringResource(R.string.reliability_section_help))
-                    Spacer(Modifier.height(SkyoraSpacing.xs))
-                    Text(
-                        text = stringResource(R.string.reliability_help_body),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = SkyoraColors.TextSecondary,
-                    )
-                    if (!state.guideDismissed) {
-                        Spacer(Modifier.height(SkyoraSpacing.sm))
-                        Text(
-                            text = vendorGuidance(state.vendor),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = SkyoraColors.TextSecondary,
-                        )
-                        Spacer(Modifier.height(SkyoraSpacing.xs))
-                        Text(
-                            text = stringResource(R.string.reliability_disclaimer),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = SkyoraColors.TextTertiary,
-                        )
-                        Spacer(Modifier.height(SkyoraSpacing.sm))
-                        // The list of apps with battery restrictions, not a
-                        // direct exemption request: the user picks SKYORA.
-                        SkyoraTextButton(
-                            text = stringResource(R.string.reliability_open_settings),
-                            onClick = {
+            order.forEach { section ->
+                item(key = section.name) {
+                    when (section) {
+                        Section.HELP -> HelpCard(
+                            state = state,
+                            onOpenBatterySettings = {
                                 val intent = Intent(
                                     Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS,
                                 )
                                 runCatching { context.startActivity(intent) }
                                     .onFailure { context.openAppSettings() }
                             },
+                            onOpenAppInfo = { context.openAppSettings() },
+                            onDismiss = viewModel::dismissGuide,
+                            onRestore = viewModel::restoreGuide,
                         )
-                        SkyoraTextButton(
-                            text = stringResource(R.string.reliability_open_app_info),
-                            onClick = { context.openAppSettings() },
+
+                        Section.ACTION -> SkyoraPrimaryButton(
+                            text = stringResource(R.string.reliability_refresh_now),
+                            onClick = { viewModel.refreshWidgetsNow { count -> report(count) } },
+                            loading = state.isRefreshing,
+                            modifier = Modifier.fillMaxWidth(),
                         )
-                        SkyoraTextButton(
-                            text = stringResource(R.string.reliability_dismiss),
-                            onClick = viewModel::dismissGuide,
-                            color = SkyoraColors.TextTertiary,
-                        )
-                    } else {
-                        SkyoraTextButton(
-                            text = stringResource(R.string.reliability_restore_help),
-                            onClick = viewModel::restoreGuide,
-                        )
+
+                        Section.REFRESH -> RefreshStatusCard(state)
+                        Section.SYSTEM -> SystemStatusCard(state)
                     }
                 }
-            }
-
-            item(key = "actions") {
-                SkyoraPrimaryButton(
-                    text = stringResource(R.string.reliability_refresh_now),
-                    onClick = { viewModel.refreshWidgetsNow(::report) },
-                    loading = state.isRefreshing,
-                    modifier = Modifier.fillMaxWidth(),
-                )
             }
         }
 
@@ -406,4 +285,172 @@ private fun vendorGuidance(vendor: DeviceVendor): String = when (vendor) {
     DeviceVendor.VIVO -> stringResource(R.string.reliability_help_vivo)
     DeviceVendor.SAMSUNG -> stringResource(R.string.reliability_help_samsung)
     DeviceVendor.OTHER -> stringResource(R.string.reliability_help_generic)
+}
+
+/** Which card is showing; also the order they appear in. */
+private enum class Section { HELP, ACTION, REFRESH, SYSTEM }
+
+@Composable
+private fun RefreshStatusCard(state: WidgetReliabilityState) {
+    SkyoraCard(modifier = Modifier.fillMaxWidth()) {
+        SkyoraSectionLabel(text = stringResource(R.string.reliability_section_refresh))
+        Spacer(Modifier.height(SkyoraSpacing.xs))
+        StatusLine(
+            icon = Icons.Outlined.Refresh,
+            label = stringResource(R.string.reliability_last_success),
+            value = lastSuccessLabel(state),
+            tone = when (state.health) {
+                WidgetRefreshHealth.HEALTHY -> SkyoraColors.CyanSoft
+                WidgetRefreshHealth.RETRYING,
+                WidgetRefreshHealth.STALE,
+                -> SkyoraColors.Warning
+
+                WidgetRefreshHealth.NEVER_RAN -> SkyoraColors.TextSecondary
+            },
+        )
+        SkyoraDivider(modifier = Modifier.padding(vertical = SkyoraSpacing.xs))
+        StatusLine(
+            icon = Icons.Outlined.Schedule,
+            label = stringResource(R.string.reliability_last_outcome),
+            value = outcomeLabel(state),
+            tone = if (state.status.outcome == WidgetRefreshOutcome.FAILED) {
+                SkyoraColors.Warning
+            } else {
+                SkyoraColors.TextSecondary
+            },
+        )
+        SkyoraDivider(modifier = Modifier.padding(vertical = SkyoraSpacing.xs))
+        StatusLine(
+            icon = Icons.Outlined.Schedule,
+            label = stringResource(R.string.reliability_work_state),
+            value = workStateLabel(state),
+            tone = SkyoraColors.TextSecondary,
+        )
+        SkyoraDivider(modifier = Modifier.padding(vertical = SkyoraSpacing.xs))
+        StatusLine(
+            icon = Icons.Outlined.Schedule,
+            label = stringResource(R.string.reliability_interval),
+            value = stringResource(
+                R.string.reliability_interval_value,
+                state.intervalMinutes.toInt(),
+            ),
+            tone = SkyoraColors.TextSecondary,
+        )
+        Spacer(Modifier.height(SkyoraSpacing.xs))
+        Text(
+            text = stringResource(R.string.reliability_interval_note),
+            style = MaterialTheme.typography.bodySmall,
+            color = SkyoraColors.TextTertiary,
+        )
+    }
+}
+
+@Composable
+private fun SystemStatusCard(state: WidgetReliabilityState) {
+    SkyoraCard(modifier = Modifier.fillMaxWidth()) {
+        SkyoraSectionLabel(text = stringResource(R.string.reliability_section_system))
+        Spacer(Modifier.height(SkyoraSpacing.xs))
+        StatusLine(
+            icon = Icons.Outlined.BatteryAlert,
+            label = stringResource(R.string.reliability_battery_optimized),
+            value = when (state.batteryUnrestricted) {
+                true -> stringResource(R.string.reliability_battery_unrestricted)
+                false -> stringResource(R.string.reliability_battery_restricted)
+                null -> stringResource(R.string.reliability_battery_unknown)
+            },
+            tone = if (state.batteryUnrestricted == false) {
+                SkyoraColors.Warning
+            } else {
+                SkyoraColors.TextSecondary
+            },
+        )
+        if (state.batteryUnrestricted == false) {
+            Text(
+                text = stringResource(R.string.reliability_battery_note),
+                style = MaterialTheme.typography.bodySmall,
+                color = SkyoraColors.TextTertiary,
+                modifier = Modifier.padding(top = SkyoraSpacing.xxs),
+            )
+        }
+        if (state.backgroundRestricted != null) {
+            SkyoraDivider(modifier = Modifier.padding(vertical = SkyoraSpacing.xs))
+            StatusLine(
+                icon = Icons.Outlined.BatteryAlert,
+                label = stringResource(R.string.reliability_background_usage),
+                value = stringResource(
+                    if (state.backgroundRestricted == true) {
+                        R.string.reliability_background_restricted
+                    } else {
+                        R.string.reliability_background_allowed
+                    },
+                ),
+                tone = if (state.backgroundRestricted == true) {
+                    SkyoraColors.Warning
+                } else {
+                    SkyoraColors.TextSecondary
+                },
+            )
+        }
+        SkyoraDivider(modifier = Modifier.padding(vertical = SkyoraSpacing.xs))
+        StatusLine(
+            icon = Icons.Outlined.Widgets,
+            label = stringResource(R.string.reliability_widget_count),
+            value = state.widgetCount.toString(),
+            tone = SkyoraColors.TextSecondary,
+        )
+    }
+}
+
+@Composable
+private fun HelpCard(
+    state: WidgetReliabilityState,
+    onOpenBatterySettings: () -> Unit,
+    onOpenAppInfo: () -> Unit,
+    onDismiss: () -> Unit,
+    onRestore: () -> Unit,
+) {
+    SkyoraCard(modifier = Modifier.fillMaxWidth()) {
+        SkyoraSectionLabel(text = stringResource(R.string.reliability_section_help))
+        Spacer(Modifier.height(SkyoraSpacing.xs))
+        Text(
+            text = stringResource(R.string.reliability_help_body),
+            style = MaterialTheme.typography.bodySmall,
+            color = SkyoraColors.TextSecondary,
+        )
+        if (!state.guideDismissed) {
+            Spacer(Modifier.height(SkyoraSpacing.sm))
+            Text(
+                text = vendorGuidance(state.vendor),
+                style = MaterialTheme.typography.bodySmall,
+                color = SkyoraColors.TextSecondary,
+            )
+            Spacer(Modifier.height(SkyoraSpacing.xs))
+            Text(
+                text = stringResource(R.string.reliability_disclaimer),
+                style = MaterialTheme.typography.bodySmall,
+                color = SkyoraColors.TextTertiary,
+            )
+            Spacer(Modifier.height(SkyoraSpacing.sm))
+            // The list of apps with battery restrictions, not a direct
+            // exemption request: the user picks SKYORA themselves.
+            SkyoraTextButton(
+                text = stringResource(R.string.reliability_open_settings),
+                onClick = onOpenBatterySettings,
+            )
+            SkyoraTextButton(
+                text = stringResource(R.string.reliability_open_app_info),
+                onClick = onOpenAppInfo,
+            )
+            SkyoraTextButton(
+                text = stringResource(R.string.reliability_dismiss),
+                onClick = onDismiss,
+                color = SkyoraColors.TextTertiary,
+            )
+        } else {
+            SkyoraTextButton(
+                text = stringResource(R.string.reliability_restore_help),
+                onClick = onRestore,
+            )
+        }
+    }
 }

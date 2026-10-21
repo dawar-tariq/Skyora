@@ -14,6 +14,7 @@ import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.skyora.weather.core.util.decodeLocationFromRoute
 import com.skyora.weather.domain.model.Location
 import com.skyora.weather.ui.navigation.SkyoraApp
+import com.skyora.weather.ui.navigation.SkyoraRoutes
 import com.skyora.weather.ui.theme.SkyoraTheme
 
 class MainActivity : ComponentActivity() {
@@ -26,6 +27,13 @@ class MainActivity : ComponentActivity() {
      */
     private var pendingLocation by mutableStateOf<Location?>(null)
 
+    /**
+     * Set when a widget's status line is tapped on a stale widget: that tap is a
+     * question ("why is this old?"), so it opens the reliability page instead of
+     * a forecast.
+     */
+    private var pendingWidgetReliability by mutableStateOf(false)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         super.onCreate(savedInstanceState)
@@ -34,6 +42,7 @@ class MainActivity : ComponentActivity() {
             navigationBarStyle = SystemBarStyle.dark(Color.TRANSPARENT),
         )
         pendingLocation = intent.readLocation()
+        pendingWidgetReliability = intent.wantsWidgetReliability()
         val container = (application as SkyoraApplication).container
         setContent {
             SkyoraTheme {
@@ -41,6 +50,12 @@ class MainActivity : ComponentActivity() {
                     container = container,
                     requestedLocation = pendingLocation,
                     onRequestedLocationHandled = { pendingLocation = null },
+                    requestedRoute = if (pendingWidgetReliability) {
+                        SkyoraRoutes.WIDGET_RELIABILITY
+                    } else {
+                        null
+                    },
+                    onRequestedRouteHandled = { pendingWidgetReliability = false },
                 )
             }
         }
@@ -50,7 +65,11 @@ class MainActivity : ComponentActivity() {
         super.onNewIntent(intent)
         setIntent(intent)
         intent.readLocation()?.let { pendingLocation = it }
+        if (intent.wantsWidgetReliability()) pendingWidgetReliability = true
     }
+
+    private fun Intent?.wantsWidgetReliability(): Boolean =
+        this?.getBooleanExtra(EXTRA_OPEN_RELIABILITY, false) == true
 
     private fun Intent?.readLocation(): Location? = this
         ?.getStringExtra(EXTRA_LOCATION_PAYLOAD)
@@ -59,5 +78,8 @@ class MainActivity : ComponentActivity() {
     companion object {
         /** Base64 (URL-safe) encoded Location; see core/util/LocationRoute.kt. */
         const val EXTRA_LOCATION_PAYLOAD = "com.skyora.weather.extra.LOCATION"
+
+        /** Widget status-line tap: open Widget reliability. */
+        const val EXTRA_OPEN_RELIABILITY = "com.skyora.weather.extra.OPEN_RELIABILITY"
     }
 }

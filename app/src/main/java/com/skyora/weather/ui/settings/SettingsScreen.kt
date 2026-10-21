@@ -27,6 +27,7 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ChevronRight
@@ -88,6 +89,7 @@ import com.skyora.weather.core.util.openUrl
 import com.skyora.weather.core.util.rememberNowMillis
 import com.skyora.weather.di.AppContainer
 import com.skyora.weather.domain.model.TemperatureUnit
+import com.skyora.weather.domain.widget.WidgetRefreshHealth
 import com.skyora.weather.ui.designsystem.AttributionDialog
 import com.skyora.weather.ui.designsystem.ScreenHeader
 import com.skyora.weather.ui.designsystem.SkyoraBackdrop
@@ -129,6 +131,8 @@ fun SettingsScreen(
 ) {
     val viewModel: SettingsViewModel = viewModel(factory = SettingsViewModel.factory(container))
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val widgetNeedsAttention = state.widgetHealth == WidgetRefreshHealth.STALE ||
+        state.widgetHealth == WidgetRefreshHealth.RETRYING
     val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -409,8 +413,15 @@ fun SettingsScreen(
                     SettingsNavRow(
                         icon = Icons.Outlined.Widgets,
                         title = stringResource(R.string.settings_widget_reliability),
-                        description = stringResource(R.string.settings_widget_reliability_desc),
+                        // Only claim a problem when the journal actually shows
+                        // one; otherwise stay descriptive.
+                        description = if (widgetNeedsAttention) {
+                            stringResource(R.string.settings_widget_reliability_attention)
+                        } else {
+                            stringResource(R.string.settings_widget_reliability_desc)
+                        },
                         onClick = onOpenWidgetReliability,
+                        attention = widgetNeedsAttention,
                     )
                 }
             }
@@ -768,6 +779,7 @@ private fun SettingsNavRow(
     title: String,
     description: String?,
     onClick: () -> Unit,
+    attention: Boolean = false,
 ) {
     Row(
         modifier = Modifier
@@ -791,9 +803,18 @@ private fun SettingsNavRow(
                 Text(
                     text = description,
                     style = MaterialTheme.typography.bodySmall,
-                    color = SkyoraColors.TextTertiary,
+                    color = if (attention) SkyoraColors.Warning else SkyoraColors.TextTertiary,
                 )
             }
+        }
+        if (attention) {
+            // Same cyan dot as the Home gear: it survives dismissing the
+            // banner, so the clue is still here next time the user looks.
+            Box(
+                modifier = Modifier
+                    .size(8.dp)
+                    .background(SkyoraColors.Cyan, CircleShape),
+            )
         }
         Icon(
             imageVector = Icons.Outlined.ChevronRight,

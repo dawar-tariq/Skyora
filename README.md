@@ -10,11 +10,11 @@ A native Android weather app built with Kotlin, Jetpack Compose and Material 3. 
 
 | | |
 |---|---|
-| Source | 96 Kotlin sources (87 app + 9 test), 9 screens, 466 strings, 20 weather-icon vectors |
+| Source | 99 Kotlin sources (88 app + 11 test), 9 screens, 473 strings, 20 weather-icon vectors |
 | Android build | **Verified on GitHub Actions** (ubuntu-latest, JDK 17, Android SDK 35): `testDebugUnitTest` and `assembleDebug` both pass (run [39605163444](https://github.com/dawar-tariq/Skyora/actions/runs/39605163444)). |
 | APK | Built by CI and published to [Releases](https://github.com/dawar-tariq/Skyora/releases/latest) (debug-signed, installable). |
-| Unit tests | **85 JVM tests, 0 failures**, executed by CI (`unit-tests` commit status carries the count). |
-| Widgets | 2x2 compact and 4x2 forecast home-screen widgets with per-widget city selection, 30-minute background refresh and a built-in reliability page. |
+| Unit tests | **107 JVM tests, 0 failures**, executed by CI (`unit-tests` commit status carries the count). |
+| Widgets | 2x2 compact and 4x2 forecast home-screen widgets with per-widget city selection, 30-minute background refresh, a built-in reliability page and an in-context nudge when refresh actually stalls. |
 | Notifications | Local WorkManager-scheduled daily summary and rain alerts (not remote push). Severe-weather alerts are explicitly unavailable rather than fabricated. |
 
 ## Round 2 changes at a glance
@@ -47,6 +47,23 @@ The device screenshots showed a clear afternoon rendered with a midnight sky, a 
 | Notification time zones | The chosen delivery time is resolved in the **notification city's** zone and rescheduled when that city changes | `notifications/NotificationScheduler.kt`, `work/DailyForecastWorker.kt`, `di/AppContainer.kt` |
 | Onboarding | Fourth slide carries the real notification opt-in (daily time, rain threshold, permission, blocked state) | `ui/onboarding/OnboardingScreen.kt`, `OnboardingViewModel.kt` |
 | Tests | `SkyMomentTest`, `SkyBackdropContrastTest`, `WidgetRefreshHealthTest`, cross-zone cases in `NotificationSchedulerTest` | `app/src/test/...` |
+
+## Round 5 changes at a glance
+
+The reliability page from the previous round answered "why is my widget old?" — but only for people who went looking for it. Setup screens cannot carry that message, because nobody opens them twice. This round puts the answer where the symptom appears.
+
+| Area | What changed | Files |
+|---|---|---|
+| Nudge rules | A pure-Kotlin rule decides when the app may speak: only when a widget is placed, the phone is online, and the journal shows `STALE` or `RETRYING`. Never `NEVER_RAN`, never a guess about a manufacturer setting | `domain/widget/WidgetRefreshStatus.kt` (`WidgetNudgeState`, `WidgetNudgeRules`) |
+| One mention per episode | Dismissing the Home banner records the episode (the last success timestamp). It stays quiet until the widget recovers and fails again, or seven days pass | `widget/WidgetRefreshStatusStore.kt` (`nudge`, `dismissNudge`) |
+| Home banner | A warning banner on Home — "Your widget isn't updating … last refreshed 6 h ago" — with **See why** (opens reliability) and dismiss. The copy reports age, never a cause it cannot see | `ui/home/HomeScreen.kt`, `HomeViewModel.kt` |
+| Settings cue | A cyan dot on the Settings gear and on the Widget reliability row, plus symptom wording in that row. The dot survives dismissing the banner, so the clue is still there later | `ui/designsystem/Controls.kt` (`SkyoraIconButton(badge)`), `ui/home/HomeScreen.kt`, `ui/settings/SettingsScreen.kt`, `SettingsViewModel.kt` |
+| Stale widget tap | The "Updated … ago" line on a widget older than two refresh windows is tinted and opens the reliability page; on fresh data it opens the city like the rest of the card | `widget/WidgetRenderer.kt`, `MainActivity.kt` (`EXTRA_OPEN_RELIABILITY`), `ui/navigation/SkyoraApp.kt` |
+| Live detection | Home re-evaluates the rules every 60 s from local state (journal + connectivity), so leaving the app open cannot hide a dead background job. No network call | `ui/home/HomeViewModel.kt` |
+| Reliability page order | When the journal is unhealthy the page leads with the fix and the manual refresh; when healthy it leads with the numbers. A health line repeats the banner's wording | `ui/widgets/WidgetReliabilityScreen.kt` |
+| Tests | 12 new rule tests: healthy, stale, failed-after-success, no widget, offline, fresh install, dismissal, recovery, weekly cooldown, stable never-succeeded marker | `app/src/test/.../WidgetNudgeRulesTest.kt` |
+
+What this deliberately does **not** do: request a battery exemption automatically, repeat a prompt on every launch, or claim Android has restricted the app. It says what it observed ("hasn't refreshed since …") and puts the exact OEM menu one tap away.
 
 ## Get the app
 
@@ -106,6 +123,8 @@ Clear, mainly-clear, partly-cloudy and rain-shower artwork therefore flips at th
 Both are `RemoteViews` layouts (LinearLayout/TextView/ImageView only) built by `widget/WidgetRenderer.kt` from the **existing** repository — the widgets never call the network directly. Data comes from the cache when present and from a normal repository fetch otherwise, so a widget and the app can never disagree. Each widget stores its own city (`WidgetPreferences`) chosen in `WidgetConfigActivity` (the `android:configure` activity); cancelling removes the widget. The four refresh triggers are: widget placed/resized, any successful app fetch, a change of selected city/temperature unit, and a 30-minute periodic safety net (`WorkManager`, all coalesced under unique work names, `UPDATE` policy so an install picks up a changed interval). Deleting the last widget cancels the periodic job, and re-placing one re-arms it. Both widgets ship a picker preview (`previewLayout` on Android 12+, `previewImage` below).
 
 **Widget reliability** (`Settings › Widgets › Widget reliability`) exists because "the widget only updates when I open the app" is the single most common weather-widget complaint, and the honest answer depends on the device. It reports the last successful refresh and last outcome from a journal that survives clearing the cache, the WorkManager state of the periodic job, the requested interval, whether the app is exempt from battery optimisation, whether background usage is restricted (Android 9+) and how many widgets are placed. Guidance is shown for Xiaomi/Redmi/POCO, Huawei/Honor, Oppo/Realme/OnePlus, Vivo/iQOO and Samsung, with a button that opens the system battery-settings list — never a direct exemption request, and nothing here is required for the app to work. The page states explicitly that Android controls the exact timing and that some restrictions cannot be detected.
+
+Because almost nobody revisits Settings, the same answer now comes to the user: once a widget exists and the journal shows refresh has stopped succeeding (and the phone is online, so the network is not the explanation), Home shows one dismissible banner with **See why**, the Settings gear carries a dot, and the widget's own "Updated … ago" line — when it is more than two refresh windows old — opens the reliability page instead of a forecast. Dismissing is per episode: the app speaks again only if the widget recovers and breaks again, or after seven days. No permission is requested, no battery-exemption dialog is triggered, and nothing is claimed about the device that the app cannot observe.
 
 ### Notifications (local schedule, not push)
 
@@ -248,7 +267,7 @@ Static checks performed while the SDK was unavailable locally:
 * All 20 weather vectors were rasterised (resvg) and inspected: distinct day sun, night crescent, sun/moon-behind-cloud, rain, drizzle, snow, sleet, storm with lightning, hail, fog and fallback artwork, with consistent stroke and scale.
 * Widget layouts were audited for `RemoteViews` compatibility (no `Space`, `View`, or `ConstraintLayout`); the compact widget's optional line is dropped by measured width **and** height instead of clipping.
 
-What is **not** verified: no emulator/device run and no screenshot or instrumentation tests in this environment. Widget rendering, notification delivery timing, the installed launcher icon and OEM background behaviour have therefore not been visually or behaviourally exercised on hardware; they are compiled and CI-built, not device-confirmed. In particular, "refreshes without opening the app", Doze behaviour and MIUI/HyperOS battery behaviour need a device check — the reliability page was built so the user can see what actually happened instead of guessing.
+What is **not** verified: no emulator/device run and no screenshot or instrumentation tests in this environment. Widget rendering, notification delivery timing, the installed launcher icon and OEM background behaviour have therefore not been visually or behaviourally exercised on hardware; they are compiled and CI-built, not device-confirmed. The round-5 paths — the Home banner appearing after a real stalled refresh, the gear dot, and the stale widget line opening the reliability page — were exercised as pure rules in unit tests, not on a device. In particular, "refreshes without opening the app", Doze behaviour and MIUI/HyperOS battery behaviour need a device check — the reliability page was built so the user can see what actually happened instead of guessing.
 
 ## Limitations and next steps
 

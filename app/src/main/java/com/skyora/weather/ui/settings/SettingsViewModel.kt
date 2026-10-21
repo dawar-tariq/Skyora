@@ -18,6 +18,10 @@ import com.skyora.weather.domain.model.TemperatureUnit
 import com.skyora.weather.domain.repository.PreferencesRepository
 import com.skyora.weather.domain.repository.SavedCitiesRepository
 import com.skyora.weather.domain.repository.WeatherRepository
+import com.skyora.weather.domain.widget.WidgetRefreshHealth
+import com.skyora.weather.domain.widget.WidgetRefreshHealthRules
+import com.skyora.weather.widget.WidgetRefreshStatusStore
+import com.skyora.weather.widget.WidgetUpdater
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -25,6 +29,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import java.time.Clock
 
 data class SettingsUiState(
     val unit: TemperatureUnit = TemperatureUnit.CELSIUS,
@@ -35,6 +40,8 @@ data class SettingsUiState(
     val versionName: String = "",
     val notifications: NotificationSettings = NotificationSettings(),
     val savedCities: List<SavedCity> = emptyList(),
+    /** Health of the background widget refresh, for the Widgets row. */
+    val widgetHealth: WidgetRefreshHealth = WidgetRefreshHealth.NEVER_RAN,
 ) {
     /** Master switch state: any notification type enabled. */
     val notificationsEnabled: Boolean get() = notifications.anyEnabled
@@ -58,6 +65,8 @@ class SettingsViewModel(
     private val weatherRepository: WeatherRepository,
     private val locationCoordinator: LocationCoordinator,
     private val savedCitiesRepository: SavedCitiesRepository,
+    private val widgetStatusStore: WidgetRefreshStatusStore,
+    private val clock: Clock,
     private val versionName: String,
 ) : ViewModel() {
 
@@ -65,7 +74,8 @@ class SettingsViewModel(
         preferencesRepository.preferences,
         locationCoordinator.state,
         savedCitiesRepository.savedCities,
-    ) { prefs, access, saved ->
+        widgetStatusStore.status,
+    ) { prefs, access, saved, widgetStatus ->
         SettingsUiState(
             unit = prefs.temperatureUnit,
             automaticLocationEnabled = prefs.automaticLocationEnabled,
@@ -75,6 +85,11 @@ class SettingsViewModel(
             versionName = versionName,
             notifications = prefs.notifications,
             savedCities = saved,
+            widgetHealth = WidgetRefreshHealthRules.classify(
+                status = widgetStatus,
+                nowMillis = clock.millis(),
+                requestedIntervalMinutes = WidgetUpdater.PERIOD_MINUTES,
+            ),
         )
     }.stateIn(
         scope = viewModelScope,
@@ -229,6 +244,8 @@ class SettingsViewModel(
                     weatherRepository = container.weatherRepository,
                     locationCoordinator = container.locationCoordinator,
                     savedCitiesRepository = container.savedCitiesRepository,
+                    widgetStatusStore = container.widgetRefreshStatusStore,
+                    clock = container.clock,
                     versionName = container.appVersionName,
                 )
             }

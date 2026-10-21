@@ -60,6 +60,30 @@ object SkyoraRoutes {
 }
 
 /**
+ * Opens [target] on top of Home for a tap that started outside the app (widget,
+ * notification).
+ *
+ * A cold start still sits on Splash, so Home has to replace it; a warm start
+ * already has Home somewhere in the stack, and pushing a second one would make
+ * the back button return to the same screen. Popping back to the existing Home
+ * covers both cases with one path.
+ */
+private fun NavHostController.openFromOutside(target: String) {
+    val homeOnStack = currentBackStack.value.any {
+        it.destination.route == SkyoraRoutes.HOME
+    }
+    if (homeOnStack) {
+        popBackStack(SkyoraRoutes.HOME, inclusive = false)
+    } else {
+        navigate(SkyoraRoutes.HOME) {
+            popUpTo(SkyoraRoutes.SPLASH) { inclusive = true }
+            launchSingleTop = true
+        }
+    }
+    navigate(target) { launchSingleTop = true }
+}
+
+/**
  * Single NavHost for the whole app. The bottom bar is a measured overlay rather
  * than a Scaffold slot, so the procedural sky truly runs edge to edge behind it;
  * screens read [LocalBottomBarInset] to keep their last row discoverable.
@@ -69,6 +93,8 @@ fun SkyoraApp(
     container: AppContainer,
     requestedLocation: Location? = null,
     onRequestedLocationHandled: () -> Unit = {},
+    requestedRoute: String? = null,
+    onRequestedRouteHandled: () -> Unit = {},
 ) {
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
@@ -79,14 +105,23 @@ fun SkyoraApp(
 
     // Widget / notification tap: open that city's forecast once, then clear the
     // request so recreation does not re-navigate.
-    LaunchedEffect(requestedLocation) {
+    LaunchedEffect(requestedLocation, currentRoute) {
         val location = requestedLocation ?: return@LaunchedEffect
-        navController.navigate(SkyoraRoutes.HOME) {
-            popUpTo(SkyoraRoutes.SPLASH) { inclusive = true }
-            launchSingleTop = true
-        }
-        navController.navigate(SkyoraRoutes.city(location)) { launchSingleTop = true }
+        // A cold start still shows Splash, whose own effect will navigate Home
+        // when it is done; going now would put Splash's Home on top of the
+        // forecast we just opened. Wait for it to finish first.
+        if (currentRoute == null || currentRoute == SkyoraRoutes.SPLASH) return@LaunchedEffect
+        navController.openFromOutside(SkyoraRoutes.city(location))
         onRequestedLocationHandled()
+    }
+
+    // Same contract as the city request above, but for a screen that is not
+    // tied to a location (the widget's "why is this stale?" tap).
+    LaunchedEffect(requestedRoute, currentRoute) {
+        val route = requestedRoute ?: return@LaunchedEffect
+        if (currentRoute == null || currentRoute == SkyoraRoutes.SPLASH) return@LaunchedEffect
+        navController.openFromOutside(route)
+        onRequestedRouteHandled()
     }
 
     var bottomBarHeightPx by remember { mutableIntStateOf(0) }
@@ -148,6 +183,11 @@ fun SkyoraApp(
                         onOpenSettings = { navController.navigate(SkyoraRoutes.SETTINGS) },
                         onChooseCity = {
                             navController.navigate(SkyoraRoutes.SEARCH_PICK) {
+                                launchSingleTop = true
+                            }
+                        },
+                        onOpenWidgetReliability = {
+                            navController.navigate(SkyoraRoutes.WIDGET_RELIABILITY) {
                                 launchSingleTop = true
                             }
                         },
