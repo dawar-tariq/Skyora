@@ -399,7 +399,7 @@
 
     <!-- Notifications -->
     <string name="notif_channel_daily">Daily forecast</string>
-    <string name="notif_channel_daily_desc">One summary of today's weather at your chosen time.</string>
+    <string name="notif_channel_daily_desc">One summary of today\'s weather at your chosen time.</string>
     <string name="notif_channel_rain">Rain alerts</string>
     <string name="notif_channel_rain_desc">Forecast-based alerts when rain is likely soon. Not an official warning service.</string>
     <string name="notif_daily_title">SKYORA — Today in %1$s</string>
@@ -417,7 +417,7 @@
     <string name="settings_notif_enable">Weather notifications</string>
     <string name="settings_notif_enable_desc">Master switch for the daily forecast and rain alerts.</string>
     <string name="settings_notif_daily">Daily forecast</string>
-    <string name="settings_notif_daily_desc">A summary of today's weather, every day.</string>
+    <string name="settings_notif_daily_desc">A summary of today\'s weather, every day.</string>
     <string name="settings_notif_time">Delivery time</string>
     <string name="settings_notif_time_desc">Local time for the daily summary.</string>
     <string name="settings_notif_rain">Rain alerts</string>
