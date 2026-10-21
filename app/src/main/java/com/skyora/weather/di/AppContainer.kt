@@ -21,6 +21,16 @@ import com.skyora.weather.domain.repository.GeocodingRepository
 import com.skyora.weather.domain.repository.PreferencesRepository
 import com.skyora.weather.domain.repository.SavedCitiesRepository
 import com.skyora.weather.domain.repository.WeatherRepository
+import com.skyora.weather.notifications.NotificationChannels
+import com.skyora.weather.notifications.NotificationScheduler
+import com.skyora.weather.widget.WidgetPreferences
+import com.skyora.weather.widget.WidgetUpdater
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
@@ -99,6 +109,11 @@ class AppContainer(context: Context) {
             mapper = ForecastMapper(),
             cacheStore = WeatherCacheStore(cacheDataStore, json),
             clock = clock,
+            onSnapshotStored = {
+                // Any successful fetch makes every placed widget stale; coalesced
+                // into a single unique WorkManager job.
+                WidgetUpdater.refreshNow(appContext)
+            },
         )
     }
 
@@ -116,8 +131,42 @@ class AppContainer(context: Context) {
 
     val networkMonitor: NetworkMonitor by lazy { NetworkMonitor(appContext) }
 
-    /** Reserved for the future notification phase; a no-op for now. */
+    /**
+     * Notification scheduling is local (WorkManager), not remote push. The
+     * interface is kept so a future push implementation can be swapped in.
+     */
     val weatherAlertScheduler: WeatherAlertScheduler = NoOpWeatherAlertScheduler
 
+    val notificationScheduler: NotificationScheduler = NotificationScheduler
+
+    val widgetPreferences: WidgetPreferences by lazy { WidgetPreferences(appContext, json) }
+
     val appVersionName: String = BuildConfig.VERSION_NAME
+
+    /**
+     * Application-scoped observers that keep widgets and notification schedules
+     * in sync with preferences. Started from [startBackgroundSync].
+     */
+    private val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+
+    fun startBackgroundSync() {
+        NotificationChannels.ensureCreated(appContext)
+        WidgetUpdater.schedulePeriodicRefresh(appContext)
+
+        // Widgets follow the selected city and the temperature unit.
+        applicationScope.launch {
+            preferencesRepository.preferences
+                .map { prefs -> prefs.selectedLocation.id to prefs.temperatureUnit }
+                .distinctUntilChanged()
+                .collect { WidgetUpdater.refreshNow(appContext) }
+        }
+
+        // Notification work follows the notification settings only.
+        applicationScope.launch {
+            preferencesRepository.preferences
+                .map { it.notifications }
+                .distinctUntilChanged()
+                .collect { settings -> notificationScheduler.sync(appContext, settings) }
+        }
+    }
 }

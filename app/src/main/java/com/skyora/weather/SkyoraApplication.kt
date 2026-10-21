@@ -11,5 +11,7 @@ class SkyoraApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         container = AppContainer(this)
+        // Channels, periodic widget refresh and preference observers.
+        container.startBackgroundSync()
     }
 }

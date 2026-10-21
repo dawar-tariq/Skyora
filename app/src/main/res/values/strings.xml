@@ -260,6 +260,7 @@
     <string name="settings_open_system">Open system settings</string>
     <string name="settings_notifications">Notifications</string>
     <string name="settings_coming_soon">Coming later</string>
+    <string name="settings_unavailable_badge">Unavailable</string>
     <string name="settings_weather_alerts">Weather alerts</string>
     <string name="settings_weather_alerts_desc">Severe weather notifications.</string>
     <string name="settings_daily_forecast">Daily forecast</string>
@@ -375,4 +376,69 @@
     <string name="home_default_banner_action">Turn on location</string>
     <string name="city_weather_attribution_desc">Weather data by Open-Meteo under CC BY 4.0. Open details.</string>
     <string name="city_local_time">Local time · %1$s</string>
+
+    <!-- Home-screen widgets -->
+    <string name="widget_compact_name">SKYORA · Current</string>
+    <string name="widget_compact_description">City, temperature and conditions at a glance.</string>
+    <string name="widget_forecast_name">SKYORA · Forecast</string>
+    <string name="widget_forecast_description">Current conditions plus the next hours, with last-updated time.</string>
+    <string name="widget_weather_icon">Current conditions</string>
+    <string name="widget_high_low">H %1$s  ·  L %2$s</string>
+    <string name="widget_no_data">—</string>
+    <string name="widget_no_data_body">Open SKYORA to load the forecast</string>
+    <string name="widget_tap_to_open">Tap to open SKYORA</string>
+    <string name="widget_updated_prefix">Updated %1$s</string>
+    <string name="widget_updated_just_now">just now</string>
+    <string name="widget_updated_minutes">%1$d min ago</string>
+    <string name="widget_updated_hours">%1$d h ago</string>
+    <string name="widget_updated_older">over a day ago</string>
+    <string name="widget_config_label">Choose widget city</string>
+    <string name="widget_config_title">Widget city</string>
+    <string name="widget_config_body">Pick the city this widget should show. You can add more widgets for other cities.</string>
+    <string name="widget_config_use_selected">Use selected city</string>
+    <string name="widget_config_empty">No saved cities yet — the selected city will be used.</string>
+
+    <!-- Notifications -->
+    <string name="notif_channel_daily">Daily forecast</string>
+    <string name="notif_channel_daily_desc">One summary of today\'s weather at your chosen time.</string>
+    <string name="notif_channel_rain">Rain alerts</string>
+    <string name="notif_channel_rain_desc">Forecast-based alerts when rain is likely soon. Not an official warning service.</string>
+    <string name="notif_daily_title">SKYORA — Today in %1$s</string>
+    <string name="notif_daily_text">%1$s · High %2$s · Low %3$s. Tap for the full forecast.</string>
+    <string name="notif_rain_title">Rain likely in %1$s</string>
+    <string name="notif_rain_text">%1$d%% chance around %2$s (%3$s). Forecast, not an official warning.</string>
+    <string name="notif_permission_title">Notifications are off</string>
+    <string name="notif_permission_body">Android is blocking SKYORA notifications. Enable them in system settings to receive the daily forecast and rain alerts.</string>
+    <string name="notif_permission_settings">Open notification settings</string>
+    <string name="notif_permission_needed">Allow notifications to use this feature.</string>
+    <string name="notif_denied_explanation">SKYORA will keep working without notifications. You can enable them any time from Settings.</string>
+
+    <string name="settings_notifications_title">Weather notifications</string>
+    <string name="settings_notifications_desc">Scheduled on this device. Timing is handled by Android and may be delayed by battery saver.</string>
+    <string name="settings_notif_enable">Weather notifications</string>
+    <string name="settings_notif_enable_desc">Master switch for the daily forecast and rain alerts.</string>
+    <string name="settings_notif_daily">Daily forecast</string>
+    <string name="settings_notif_daily_desc">A summary of today\'s weather, every day.</string>
+    <string name="settings_notif_time">Delivery time</string>
+    <string name="settings_notif_time_desc">Local time for the daily summary.</string>
+    <string name="settings_notif_rain">Rain alerts</string>
+    <string name="settings_notif_rain_desc">Warn when rain is likely within the next few hours.</string>
+    <string name="settings_notif_threshold">Rain threshold</string>
+    <string name="settings_notif_threshold_value">%1$d%% chance or higher</string>
+    <string name="settings_notif_threshold_light">Light</string>
+    <string name="settings_notif_threshold_likely">Likely</string>
+    <string name="settings_notif_threshold_very_likely">Very likely</string>
+    <string name="settings_notif_city">Forecast city</string>
+    <string name="settings_notif_city_desc">Which city the notifications use.</string>
+    <string name="settings_notif_city_selected">Selected city</string>
+    <string name="settings_notif_city_dialog_title">Notification city</string>
+    <string name="settings_notif_severe">Severe weather alerts</string>
+    <string name="settings_notif_severe_unavailable">Not available — no official alert source is integrated. SKYORA will not invent warnings from forecasts.</string>
+    <string name="settings_notif_disabled_note">Turn on weather notifications to configure this section.</string>
+    <string name="settings_notif_enabled_snackbar">Weather notifications enabled</string>
+    <string name="settings_notif_disabled_snackbar">Weather notifications turned off</string>
+    <string name="settings_notif_time_set">Daily forecast set for %1$s</string>
+    <string name="settings_notif_city_set">Notifications will use %1$s</string>
+    <string name="settings_notif_permission_denied">Notification permission not granted</string>
+
 </resources>

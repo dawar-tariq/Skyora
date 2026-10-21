@@ -52,6 +52,7 @@ fun SkyoraDialog(
     dismissLabel: String? = null,
     destructive: Boolean = false,
     links: List<DialogLink> = emptyList(),
+    extraContent: (@Composable () -> Unit)? = null,
 ) {
     val context = LocalContext.current
     AlertDialog(
@@ -80,6 +81,10 @@ fun SkyoraDialog(
                     style = MaterialTheme.typography.bodyMedium,
                     color = SkyoraColors.TextSecondary,
                 )
+                if (extraContent != null) {
+                    Spacer(Modifier.height(SkyoraSpacing.md))
+                    extraContent()
+                }
                 if (links.isNotEmpty()) {
                     Spacer(Modifier.height(SkyoraSpacing.md))
                     links.forEach { link ->
@@ -139,12 +144,14 @@ fun SkyoraInfoDialog(
     body: String,
     onDismiss: () -> Unit,
     links: List<DialogLink> = emptyList(),
+    extraContent: (@Composable () -> Unit)? = null,
 ) {
     SkyoraDialog(
         title = title,
         body = body,
         onDismiss = onDismiss,
         links = links,
+        extraContent = extraContent,
     )
 }
 

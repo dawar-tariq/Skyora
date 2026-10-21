@@ -5,6 +5,7 @@ import com.skyora.weather.domain.model.Location
 import com.skyora.weather.domain.model.MoveDirection
 import com.skyora.weather.domain.model.SavedCity
 import com.skyora.weather.domain.model.TemperatureUnit
+import com.skyora.weather.domain.model.NotificationSettings
 import com.skyora.weather.domain.model.UserPreferences
 import com.skyora.weather.domain.model.WeatherError
 import com.skyora.weather.domain.model.WeatherResult
@@ -57,6 +58,20 @@ interface PreferencesRepository {
     suspend fun addRecentSearch(location: Location)
 
     suspend fun clearRecentSearches()
+
+    // --- notifications -------------------------------------------------------
+    suspend fun setDailyForecastEnabled(enabled: Boolean)
+
+    suspend fun setDailyForecastMinutes(minutes: Int)
+
+    suspend fun setRainAlertsEnabled(enabled: Boolean)
+
+    suspend fun setRainThresholdPercent(percent: Int)
+
+    suspend fun setNotificationLocation(location: Location?)
+
+    /** Drops every notification preference; used by "reset settings". */
+    suspend fun clearNotificationSettings()
 }
 
 interface SavedCitiesRepository {

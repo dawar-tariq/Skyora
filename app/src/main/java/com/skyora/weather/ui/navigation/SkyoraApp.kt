@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -62,13 +63,29 @@ object SkyoraRoutes {
  * screens read [LocalBottomBarInset] to keep their last row discoverable.
  */
 @Composable
-fun SkyoraApp(container: AppContainer) {
+fun SkyoraApp(
+    container: AppContainer,
+    requestedLocation: Location? = null,
+    onRequestedLocationHandled: () -> Unit = {},
+) {
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
     val showBottomBar = currentRoute == SkyoraRoutes.HOME ||
         currentRoute == SkyoraRoutes.SEARCH ||
         currentRoute == SkyoraRoutes.SAVED
+
+    // Widget / notification tap: open that city's forecast once, then clear the
+    // request so recreation does not re-navigate.
+    LaunchedEffect(requestedLocation) {
+        val location = requestedLocation ?: return@LaunchedEffect
+        navController.navigate(SkyoraRoutes.HOME) {
+            popUpTo(SkyoraRoutes.SPLASH) { inclusive = true }
+            launchSingleTop = true
+        }
+        navController.navigate(SkyoraRoutes.city(location)) { launchSingleTop = true }
+        onRequestedLocationHandled()
+    }
 
     var bottomBarHeightPx by remember { mutableIntStateOf(0) }
     val density = LocalDensity.current

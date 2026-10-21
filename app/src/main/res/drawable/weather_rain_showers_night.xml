@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="100"
+    android:viewportHeight="100">
+    <path android:pathData="M77.26,36.23 A12,12 0 1 0 65.31,18.12 A11.040000000000001,11.040000000000001 0 0 1 77.26,36.23 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient android:type="linear" android:startX="50" android:startY="20" android:endX="50" android:endY="94" android:startColor="#F6FDFF" android:endColor="#8AD8F7" />
+        </aapt:attr>
+    </path>
+    <path android:pathData="M18.0,62.0 a12.0,12.0 0 1,0 24.0,0 a12.0,12.0 0 1,0 -24.0,0 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient android:type="linear" android:startX="30.0" android:startY="50.0" android:endX="30.0" android:endY="74.0" android:startColor="#E8F7FF" android:endColor="#8FB6D6" />
+        </aapt:attr>
+    </path>
+    <path android:pathData="M27.0,53.0 a18.0,18.0 0 1,0 36.0,0 a18.0,18.0 0 1,0 -36.0,0 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient android:type="linear" android:startX="45" android:startY="35.0" android:endX="45" android:endY="71.0" android:startColor="#E8F7FF" android:endColor="#8FB6D6" />
+        </aapt:attr>
+    </path>
+    <path android:pathData="M50.0,63.0 a11.0,11.0 0 1,0 22.0,0 a11.0,11.0 0 1,0 -22.0,0 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient android:type="linear" android:startX="61.0" android:startY="52.0" android:endX="61.0" android:endY="74.0" android:startColor="#E8F7FF" android:endColor="#8FB6D6" />
+        </aapt:attr>
+    </path>
+    <path android:pathData="M37.0,60.0 H54.0 A7.0,7.0 0 0 1 61.0,67.0 V67.0 A7.0,7.0 0 0 1 54.0,74.0 H37.0 A7.0,7.0 0 0 1 30.0,67.0 V67.0 A7.0,7.0 0 0 1 37.0,60.0 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient android:type="linear" android:startX="30.0" android:startY="60.0" android:endX="30.0" android:endY="74.0" android:startColor="#E8F7FF" android:endColor="#8FB6D6" />
+        </aapt:attr>
+    </path>
+    <path android:pathData="M41,78 L38.8,90" android:strokeColor="#79D9FF" android:strokeWidth="4.2" android:strokeLineCap="round" />
+    <path android:pathData="M53,78 L50.8,90" android:strokeColor="#79D9FF" android:strokeWidth="4.2" android:strokeLineCap="round" />
+</vector>

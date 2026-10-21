@@ -11,4 +11,6 @@
     <color name="icon_cloud_bottom">#55A9F2</color>
     <color name="icon_moon_top">#B9F2FF</color>
     <color name="icon_moon_bottom">#3B9FFF</color>
+    <color name="skyora_text_primary_dark">#F3F8FF</color>
+    <color name="skyora_text_secondary_dark">#A9BDD5</color>
 </resources>

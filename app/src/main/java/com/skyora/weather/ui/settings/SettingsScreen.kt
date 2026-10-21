@@ -1,5 +1,10 @@
 package com.skyora.weather.ui.settings
 
+import android.Manifest
+import android.os.Build
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.core.app.NotificationManagerCompat
+import com.skyora.weather.core.util.openNotificationSettings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -27,6 +32,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ChevronRight
 import androidx.compose.material.icons.outlined.DeleteSweep
 import androidx.compose.material.icons.outlined.History
+import androidx.compose.material.icons.outlined.KeyboardArrowUp
+import androidx.compose.material.icons.outlined.KeyboardArrowDown
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material.icons.outlined.Lock
@@ -35,7 +42,10 @@ import androidx.compose.material.icons.outlined.NotificationsNone
 import androidx.compose.material.icons.outlined.OpenInNew
 import androidx.compose.material.icons.outlined.Place
 import androidx.compose.material.icons.outlined.RestartAlt
+import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material.icons.outlined.Straighten
+import androidx.compose.material.icons.outlined.Warning
+import androidx.compose.material.icons.outlined.WaterDrop
 import androidx.compose.material.icons.outlined.WbSunny
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -81,7 +91,9 @@ import com.skyora.weather.ui.designsystem.ScreenHeader
 import com.skyora.weather.ui.designsystem.SkyoraBackdrop
 import com.skyora.weather.ui.designsystem.SkyoraCard
 import com.skyora.weather.ui.designsystem.SkyoraConfirmDialog
+import com.skyora.weather.ui.designsystem.SkyoraDialog
 import com.skyora.weather.ui.designsystem.SkyoraDivider
+import com.skyora.weather.ui.designsystem.SkyoraIconButton
 import com.skyora.weather.ui.designsystem.SkyoraInfoDialog
 import com.skyora.weather.ui.designsystem.SkyoraLoadingRow
 import com.skyora.weather.ui.designsystem.SkyoraMark
@@ -118,12 +130,18 @@ fun SettingsScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     var dialog by rememberSaveable { mutableStateOf<SettingsDialog?>(null) }
+    var showTimePicker by rememberSaveable { mutableStateOf(false) }
+    var showCityPicker by rememberSaveable { mutableStateOf(false) }
+    var notificationsAllowed by remember {
+        mutableStateOf(NotificationManagerCompat.from(context).areNotificationsEnabled())
+    }
     var locationAllowed by remember { mutableStateOf(context.hasAnyLocationPermission()) }
     var fineAllowed by remember { mutableStateOf(context.hasFineLocationPermission()) }
 
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
         locationAllowed = context.hasAnyLocationPermission()
         fineAllowed = context.hasFineLocationPermission()
+        notificationsAllowed = NotificationManagerCompat.from(context).areNotificationsEnabled()
     }
 
     val permissionLauncher = rememberLauncherForActivityResult(
@@ -138,9 +156,24 @@ fun SettingsScreen(
         }
     }
 
+    val notificationPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission(),
+    ) { granted ->
+        notificationsAllowed = NotificationManagerCompat.from(context).areNotificationsEnabled()
+        if (granted) {
+            viewModel.enableNotifications()
+        } else {
+            viewModel.onNotificationPermissionDenied()
+        }
+    }
+
     LaunchedEffect(viewModel) {
         viewModel.events.collect { event ->
             when (event) {
+                is SettingsEvent.SnackbarText -> snackbarHostState.showSnackbar(
+                    context.getString(event.messageRes, *event.args.toTypedArray()),
+                )
+
                 is SettingsEvent.Snackbar -> snackbarHostState.showSnackbar(context.getString(event.messageRes))
                 SettingsEvent.OnboardingReset -> onRestartOnboarding()
             }
@@ -257,26 +290,115 @@ fun SettingsScreen(
             }
 
             item(key = "notifications") {
-                SettingsSection(title = stringResource(R.string.settings_notifications)) {
-                    SettingsBadgeRow(
-                        icon = Icons.Outlined.NotificationsNone,
-                        title = stringResource(R.string.settings_weather_alerts),
-                        description = stringResource(R.string.settings_weather_alerts_desc),
-                        badge = stringResource(R.string.settings_coming_soon),
-                    )
-                    SkyoraDivider(modifier = Modifier.padding(vertical = SkyoraSpacing.xxs))
-                    SettingsBadgeRow(
-                        icon = Icons.Outlined.WbSunny,
-                        title = stringResource(R.string.settings_daily_forecast),
-                        description = stringResource(R.string.settings_daily_forecast_desc),
-                        badge = stringResource(R.string.settings_coming_soon),
-                    )
-                    Spacer(Modifier.height(SkyoraSpacing.sm))
+                SettingsSection(title = stringResource(R.string.settings_notifications_title)) {
                     Text(
-                        text = stringResource(R.string.settings_notifications_note),
+                        text = stringResource(R.string.settings_notifications_desc),
                         style = MaterialTheme.typography.bodySmall,
                         color = SkyoraColors.TextTertiary,
                     )
+                    Spacer(Modifier.height(SkyoraSpacing.sm))
+
+                    SettingsSwitchRow(
+                        icon = Icons.Outlined.NotificationsNone,
+                        title = stringResource(R.string.settings_notif_enable),
+                        description = stringResource(R.string.settings_notif_enable_desc),
+                        checked = state.notificationsEnabled,
+                        onCheckedChange = { enabled ->
+                            if (!enabled) {
+                                viewModel.disableNotifications()
+                            } else if (notificationsAllowed) {
+                                viewModel.enableNotifications()
+                            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                            } else {
+                                viewModel.enableNotifications()
+                            }
+                        },
+                    )
+
+                    val enabled = state.notificationsEnabled
+                    SkyoraDivider(modifier = Modifier.padding(vertical = SkyoraSpacing.xxs))
+                    SettingsSwitchRow(
+                        icon = Icons.Outlined.WbSunny,
+                        title = stringResource(R.string.settings_notif_daily),
+                        description = stringResource(R.string.settings_notif_daily_desc),
+                        checked = state.notifications.dailyForecastEnabled,
+                        enabled = enabled,
+                        onCheckedChange = viewModel::setDailyForecastEnabled,
+                    )
+                    SettingsValueRow(
+                        icon = Icons.Outlined.Schedule,
+                        title = stringResource(R.string.settings_notif_time),
+                        value = state.notifications.dailyForecastTimeLabel,
+                        description = stringResource(R.string.settings_notif_time_desc),
+                        enabled = enabled && state.notifications.dailyForecastEnabled,
+                        onClick = { showTimePicker = true },
+                    )
+                    SkyoraDivider(modifier = Modifier.padding(vertical = SkyoraSpacing.xxs))
+                    SettingsSwitchRow(
+                        icon = Icons.Outlined.WaterDrop,
+                        title = stringResource(R.string.settings_notif_rain),
+                        description = stringResource(R.string.settings_notif_rain_desc),
+                        checked = state.notifications.rainAlertsEnabled,
+                        enabled = enabled,
+                        onCheckedChange = viewModel::setRainAlertsEnabled,
+                    )
+                    if (state.notifications.rainAlertsEnabled) {
+                        Spacer(Modifier.height(SkyoraSpacing.sm))
+                        Text(
+                            text = stringResource(R.string.settings_notif_threshold) + " · " +
+                                stringResource(
+                                    R.string.settings_notif_threshold_value,
+                                    state.notifications.rainThresholdPercent,
+                                ),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = SkyoraColors.TextTertiary,
+                        )
+                        Spacer(Modifier.height(SkyoraSpacing.xs))
+                        SkyoraSegmentedControl(
+                            options = RAIN_THRESHOLDS,
+                            selected = state.notifications.rainThresholdPercent,
+                            onSelected = viewModel::setRainThreshold,
+                            label = { percent ->
+                                when (percent) {
+                                    40 -> stringResource(R.string.settings_notif_threshold_light)
+                                    60 -> stringResource(R.string.settings_notif_threshold_likely)
+                                    else -> stringResource(R.string.settings_notif_threshold_very_likely)
+                                }
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
+                    SkyoraDivider(modifier = Modifier.padding(vertical = SkyoraSpacing.xxs))
+                    SettingsValueRow(
+                        icon = Icons.Outlined.Place,
+                        title = stringResource(R.string.settings_notif_city),
+                        value = state.notifications.notificationLocation?.name
+                            ?: stringResource(R.string.settings_notif_city_selected),
+                        description = stringResource(R.string.settings_notif_city_desc),
+                        enabled = enabled,
+                        onClick = { showCityPicker = true },
+                    )
+                    SkyoraDivider(modifier = Modifier.padding(vertical = SkyoraSpacing.xxs))
+                    SettingsBadgeRow(
+                        icon = Icons.Outlined.Warning,
+                        title = stringResource(R.string.settings_notif_severe),
+                        description = stringResource(R.string.settings_notif_severe_unavailable),
+                        badge = stringResource(R.string.settings_unavailable_badge),
+                    )
+
+                    if (!notificationsAllowed) {
+                        Spacer(Modifier.height(SkyoraSpacing.sm))
+                        Text(
+                            text = stringResource(R.string.notif_permission_body),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = SkyoraColors.Warning,
+                        )
+                        SkyoraTextButton(
+                            text = stringResource(R.string.notif_permission_settings),
+                            onClick = { context.openNotificationSettings() },
+                        )
+                    }
                 }
             }
 
@@ -388,6 +510,34 @@ fun SettingsScreen(
         )
     }
 
+    if (showTimePicker) {
+        NotificationTimeDialog(
+            initialMinutes = state.notifications.dailyForecastMinutes,
+            onDismiss = { showTimePicker = false },
+            onConfirm = { minutes ->
+                viewModel.setDailyForecastTime(minutes)
+                showTimePicker = false
+            },
+        )
+    }
+
+    if (showCityPicker) {
+        NotificationCityDialog(
+            current = state.notifications.notificationLocation,
+            selectedCity = state.selectedLocation,
+            savedCities = state.savedCities,
+            onDismiss = { showCityPicker = false },
+            onSelect = { location ->
+                viewModel.setNotificationLocation(location)
+                showCityPicker = false
+            },
+            onUseSelected = {
+                viewModel.setNotificationLocation(state.selectedLocation)
+                showCityPicker = false
+            },
+        )
+    }
+
     when (dialog) {
         SettingsDialog.ATTRIBUTION -> AttributionDialog(onDismiss = { dialog = null })
         SettingsDialog.PRIVACY -> SkyoraInfoDialog(
@@ -416,6 +566,117 @@ fun SettingsScreen(
 
         null -> Unit
     }
+}
+
+/** Rain alert thresholds offered in the UI, as precipitation probability. */
+private val RAIN_THRESHOLDS = listOf(40, 60, 80)
+
+@Composable
+private fun NotificationTimeDialog(
+    initialMinutes: Int,
+    onDismiss: () -> Unit,
+    onConfirm: (Int) -> Unit,
+) {
+    var hour by rememberSaveable { mutableIntStateOf(initialMinutes / 60) }
+    var minute by rememberSaveable { mutableIntStateOf((initialMinutes % 60) / 5 * 5) }
+    SkyoraDialog(
+        title = stringResource(R.string.settings_notif_time),
+        body = stringResource(R.string.settings_notif_time_desc),
+        confirmLabel = stringResource(R.string.action_save),
+        onConfirm = { onConfirm(hour * 60 + minute) },
+        dismissLabel = stringResource(R.string.action_cancel),
+        onDismiss = onDismiss,
+        extraContent = {
+            StepperRow(
+                label = stringResource(R.string.settings_notif_time),
+                value = "%02d:%02d".format(hour, minute),
+                onDecrease = {
+                    if (minute == 0) {
+                        minute = 55
+                        hour = if (hour == 0) 23 else hour - 1
+                    } else {
+                        minute -= 5
+                    }
+                },
+                onIncrease = {
+                    if (minute >= 55) {
+                        minute = 0
+                        hour = (hour + 1) % 24
+                    } else {
+                        minute += 5
+                    }
+                },
+            )
+        },
+    )
+}
+
+@Composable
+private fun StepperRow(
+    label: String,
+    value: String,
+    onDecrease: () -> Unit,
+    onIncrease: () -> Unit,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
+        SkyoraIconButton(
+            icon = Icons.Outlined.KeyboardArrowDown,
+            contentDescription = label,
+            onClick = onDecrease,
+        )
+        Text(
+            text = value,
+            style = MaterialTheme.typography.headlineMedium,
+            color = SkyoraColors.TextPrimary,
+        )
+        SkyoraIconButton(
+            icon = Icons.Outlined.KeyboardArrowUp,
+            contentDescription = label,
+            onClick = onIncrease,
+        )
+    }
+}
+
+@Composable
+private fun NotificationCityDialog(
+    current: com.skyora.weather.domain.model.Location?,
+    selectedCity: com.skyora.weather.domain.model.Location,
+    savedCities: List<com.skyora.weather.domain.model.SavedCity>,
+    onDismiss: () -> Unit,
+    onSelect: (com.skyora.weather.domain.model.Location) -> Unit,
+    onUseSelected: () -> Unit,
+) {
+    val candidates = buildList {
+        add(selectedCity)
+        savedCities.forEach { add(it.location) }
+        current?.let { add(it) }
+    }.distinctBy { it.id }
+
+    SkyoraInfoDialog(
+        title = stringResource(R.string.settings_notif_city_dialog_title),
+        body = stringResource(R.string.settings_notif_city_desc),
+        onDismiss = onDismiss,
+        extraContent = {
+            Column(verticalArrangement = Arrangement.spacedBy(SkyoraSpacing.xxs)) {
+                candidates.forEach { location ->
+                    SettingsNavRow(
+                        icon = Icons.Outlined.Place,
+                        title = location.name,
+                        description = location.subtitle.ifBlank { null },
+                        onClick = { onSelect(location) },
+                    )
+                }
+                SkyoraTextButton(
+                    text = stringResource(R.string.settings_notif_city_selected),
+                    onClick = onUseSelected,
+                )
+            }
+        },
+    )
 }
 
 @Composable
@@ -538,17 +799,18 @@ private fun SettingsValueRow(
     description: String?,
     onClick: () -> Unit,
     valueTint: Color = SkyoraColors.CyanSoft,
+    enabled: Boolean = true,
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .heightIn(min = 56.dp)
-            .clickable(onClick = onClick)
+            .clickable(enabled = enabled, onClick = onClick)
             .padding(vertical = SkyoraSpacing.xs),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(SkyoraSpacing.sm),
     ) {
-        SettingsIcon(icon)
+        SettingsIcon(icon, tint = if (enabled) SkyoraColors.Cyan else SkyoraColors.TextTertiary)
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = title,

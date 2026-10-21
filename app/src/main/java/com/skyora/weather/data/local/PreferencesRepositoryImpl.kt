@@ -5,9 +5,11 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
+import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.skyora.weather.domain.model.DefaultLocations
 import com.skyora.weather.domain.model.Location
+import com.skyora.weather.domain.model.NotificationSettings
 import com.skyora.weather.domain.model.TemperatureUnit
 import com.skyora.weather.domain.model.UserPreferences
 import com.skyora.weather.domain.repository.PreferencesRepository
@@ -27,6 +29,13 @@ private object PreferenceKeys {
     val selectedLocation = stringPreferencesKey("selected_location")
     val defaultCity = stringPreferencesKey("default_city")
     val recentSearches = stringPreferencesKey("recent_searches")
+
+    // Notifications
+    val dailyForecastEnabled = booleanPreferencesKey("notif_daily_enabled")
+    val dailyForecastMinutes = intPreferencesKey("notif_daily_minutes")
+    val rainAlertsEnabled = booleanPreferencesKey("notif_rain_enabled")
+    val rainThresholdPercent = intPreferencesKey("notif_rain_threshold")
+    val notificationLocation = stringPreferencesKey("notif_location")
 }
 
 class PreferencesRepositoryImpl(
@@ -82,6 +91,51 @@ class PreferencesRepositoryImpl(
         dataStore.edit { it.remove(PreferenceKeys.recentSearches) }
     }
 
+    override suspend fun setDailyForecastEnabled(enabled: Boolean) {
+        dataStore.edit { prefs ->
+            prefs[PreferenceKeys.dailyForecastEnabled] = enabled
+            if (enabled && prefs[PreferenceKeys.dailyForecastMinutes] == null) {
+                prefs[PreferenceKeys.dailyForecastMinutes] = DEFAULT_DAILY_MINUTES
+            }
+        }
+    }
+
+    override suspend fun setDailyForecastMinutes(minutes: Int) {
+        dataStore.edit { prefs ->
+            prefs[PreferenceKeys.dailyForecastMinutes] = minutes.coerceIn(0, MINUTES_PER_DAY - 1)
+        }
+    }
+
+    override suspend fun setRainAlertsEnabled(enabled: Boolean) {
+        dataStore.edit { prefs -> prefs[PreferenceKeys.rainAlertsEnabled] = enabled }
+    }
+
+    override suspend fun setRainThresholdPercent(percent: Int) {
+        dataStore.edit { prefs ->
+            prefs[PreferenceKeys.rainThresholdPercent] = percent.coerceIn(20, 95)
+        }
+    }
+
+    override suspend fun setNotificationLocation(location: Location?) {
+        dataStore.edit { prefs ->
+            if (location == null) {
+                prefs.remove(PreferenceKeys.notificationLocation)
+            } else {
+                prefs[PreferenceKeys.notificationLocation] = json.encodeToString(location)
+            }
+        }
+    }
+
+    override suspend fun clearNotificationSettings() {
+        dataStore.edit { prefs ->
+            prefs.remove(PreferenceKeys.dailyForecastEnabled)
+            prefs.remove(PreferenceKeys.dailyForecastMinutes)
+            prefs.remove(PreferenceKeys.rainAlertsEnabled)
+            prefs.remove(PreferenceKeys.rainThresholdPercent)
+            prefs.remove(PreferenceKeys.notificationLocation)
+        }
+    }
+
     private fun Preferences.toUserPreferences(): UserPreferences {
         val unit = this[PreferenceKeys.temperatureUnit]
             ?.let { name -> runCatching { TemperatureUnit.valueOf(name) }.getOrNull() }
@@ -97,6 +151,15 @@ class PreferencesRepositoryImpl(
             selectedLocation = selected,
             defaultCity = default,
             recentSearches = decodeLocations(this[PreferenceKeys.recentSearches]),
+            notifications = NotificationSettings(
+                dailyForecastEnabled = this[PreferenceKeys.dailyForecastEnabled] ?: false,
+                dailyForecastMinutes = (this[PreferenceKeys.dailyForecastMinutes]
+                    ?: DEFAULT_DAILY_MINUTES).coerceIn(0, MINUTES_PER_DAY - 1),
+                rainAlertsEnabled = this[PreferenceKeys.rainAlertsEnabled] ?: false,
+                rainThresholdPercent = (this[PreferenceKeys.rainThresholdPercent] ?: 60)
+                    .coerceIn(20, 95),
+                notificationLocation = decodeLocation(this[PreferenceKeys.notificationLocation]),
+            ),
         )
     }
 
@@ -110,5 +173,7 @@ class PreferencesRepositoryImpl(
 
     private companion object {
         const val MAX_RECENT_SEARCHES = 6
+        const val DEFAULT_DAILY_MINUTES = 7 * 60
+        const val MINUTES_PER_DAY = 24 * 60
     }
 }

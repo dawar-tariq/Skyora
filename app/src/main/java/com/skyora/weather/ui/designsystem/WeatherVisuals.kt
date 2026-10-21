@@ -1,9 +1,13 @@
 package com.skyora.weather.ui.designsystem
 
+import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import com.skyora.weather.R
 import com.skyora.weather.core.util.UvCategory
+import com.skyora.weather.domain.model.SkyIcons
 import com.skyora.weather.domain.model.WeatherCondition
+import com.skyora.weather.domain.model.WmoWeatherCodes
+import com.skyora.weather.domain.model.sunTimes
 
 enum class WeatherVisualFamily { CLEAR, CLOUDY, RAIN, SNOW, STORM, FOG }
 
@@ -80,4 +84,84 @@ fun uvCategoryLabelRes(category: UvCategory?): Int = when (category) {
     UvCategory.VERY_HIGH -> R.string.uv_very_high
     UvCategory.EXTREME -> R.string.uv_extreme
     null -> R.string.value_unavailable
+}
+
+/**
+ * Drawable resource for a condition + day part, mapping the pure
+ * [com.skyora.weather.domain.model.SkyIcons] key onto `res/drawable/weather_*`.
+ *
+ * This is the only place the app converts an icon key into an Android
+ * resource, so Compose, widgets and notifications stay in lockstep.
+ */
+@DrawableRes
+fun weatherIconRes(
+    condition: WeatherCondition,
+    epochMillis: Long,
+    zone: java.time.ZoneId,
+    sunTimes: Map<java.time.LocalDate, com.skyora.weather.domain.model.SunTimes>,
+): Int = when (SkyIcons.iconKey(condition, epochMillis, zone, sunTimes)) {
+    "weather_clear_day" -> R.drawable.weather_clear_day
+    "weather_clear_night" -> R.drawable.weather_clear_night
+    "weather_mainly_clear_day" -> R.drawable.weather_mainly_clear_day
+    "weather_mainly_clear_night" -> R.drawable.weather_mainly_clear_night
+    "weather_partly_cloudy_day" -> R.drawable.weather_partly_cloudy_day
+    "weather_partly_cloudy_night" -> R.drawable.weather_partly_cloudy_night
+    "weather_rain_showers_day" -> R.drawable.weather_rain_showers_day
+    "weather_rain_showers_night" -> R.drawable.weather_rain_showers_night
+    "weather_overcast" -> R.drawable.weather_overcast
+    "weather_fog" -> R.drawable.weather_fog
+    "weather_drizzle" -> R.drawable.weather_drizzle
+    "weather_freezing_drizzle" -> R.drawable.weather_freezing_drizzle
+    "weather_rain" -> R.drawable.weather_rain
+    "weather_freezing_rain" -> R.drawable.weather_freezing_rain
+    "weather_snow" -> R.drawable.weather_snow
+    "weather_snow_grains" -> R.drawable.weather_snow_grains
+    "weather_snow_showers" -> R.drawable.weather_snow_showers
+    "weather_thunderstorm" -> R.drawable.weather_thunderstorm
+    "weather_thunderstorm_hail" -> R.drawable.weather_thunderstorm_hail
+    else -> R.drawable.weather_unknown
+}
+
+/** Icon for a specific forecast hour. */
+@DrawableRes
+fun weatherIconRes(snapshot: com.skyora.weather.domain.model.WeatherSnapshot, hour: com.skyora.weather.domain.model.HourlyForecast): Int =
+    weatherIconRes(
+        condition = WmoWeatherCodes.conditionFor(hour.weatherCode),
+        epochMillis = hour.timeEpochMillis,
+        zone = snapshot.zoneId(),
+        sunTimes = snapshot.sunTimes(),
+    )
+
+/** Icon for one forecast day: always the daytime artwork. */
+@DrawableRes
+fun weatherIconRes(day: com.skyora.weather.domain.model.DailyForecast): Int = when (
+    WmoWeatherCodes.conditionFor(day.weatherCode)
+) {
+    WeatherCondition.CLEAR -> R.drawable.weather_clear_day
+    WeatherCondition.MAINLY_CLEAR -> R.drawable.weather_mainly_clear_day
+    WeatherCondition.PARTLY_CLOUDY -> R.drawable.weather_partly_cloudy_day
+    WeatherCondition.RAIN_SHOWERS -> R.drawable.weather_rain_showers_day
+    else -> weatherIconRes(WmoWeatherCodes.conditionFor(day.weatherCode))
+}
+
+/** Icon for the current conditions of a snapshot. */
+@DrawableRes
+fun weatherIconRes(snapshot: com.skyora.weather.domain.model.WeatherSnapshot): Int = weatherIconRes(
+    condition = snapshot.currentCondition(),
+    epochMillis = snapshot.current.timeEpochMillis,
+    zone = snapshot.zoneId(),
+    sunTimes = snapshot.sunTimes(),
+)
+
+/**
+ * Icon for a weather code with no time context (e.g. a widget placeholder):
+ * resolves to the daytime variant where one exists.
+ */
+@DrawableRes
+fun weatherIconRes(condition: WeatherCondition): Int = when (condition) {
+    WeatherCondition.CLEAR -> R.drawable.weather_clear_day
+    WeatherCondition.MAINLY_CLEAR -> R.drawable.weather_mainly_clear_day
+    WeatherCondition.PARTLY_CLOUDY -> R.drawable.weather_partly_cloudy_day
+    WeatherCondition.RAIN_SHOWERS -> R.drawable.weather_rain_showers_day
+    else -> weatherIconRes(condition, 0L, java.time.ZoneOffset.UTC, emptyMap())
 }
