@@ -104,7 +104,7 @@ object SkyoraNotifier {
             .setSmallIcon(R.drawable.ic_stat_weather)
             .setLargeIcon(largeIcon(context, snapshot))
             .setContentIntent(contentIntent)
-            .setCategory(NotificationCompat.CATEGORY_WEATHER)
+            .setCategory(Notification.CATEGORY_WEATHER)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setColor(context.getColor(R.color.skyora_cyan))
             .setShowWhen(false)
