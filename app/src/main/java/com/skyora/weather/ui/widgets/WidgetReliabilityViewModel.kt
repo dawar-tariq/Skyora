@@ -155,8 +155,8 @@ class WidgetReliabilityViewModel(
 
     private suspend fun readPeriodicWorkState(): WorkInfo.State? {
         val future = workManager.getWorkInfosForUniqueWork(WidgetUpdater.UNIQUE_PERIODIC)
-        val infos = try {
-            suspendCancellableCoroutine { continuation ->
+        val infos: List<WorkInfo>? = try {
+            suspendCancellableCoroutine<List<WorkInfo>?> { continuation ->
                 future.addListener(
                     {
                         // The listener only fires once the future is complete,
