@@ -10,10 +10,10 @@ A native Android weather app built with Kotlin, Jetpack Compose and Material 3. 
 
 | | |
 |---|---|
-| Source | 99 Kotlin sources (88 app + 11 test), 9 screens, 473 strings, 20 weather-icon vectors |
+| Source | 102 Kotlin sources (90 app + 12 test), 9 screens, 483 strings, 20 weather-icon vectors |
 | Android build | **Verified on GitHub Actions** (ubuntu-latest, JDK 17, Android SDK 35): `testDebugUnitTest` and `assembleDebug` both pass (run [39605163444](https://github.com/dawar-tariq/Skyora/actions/runs/39605163444)). |
 | APK | Built by CI and published to [Releases](https://github.com/dawar-tariq/Skyora/releases/latest) (debug-signed, installable). |
-| Unit tests | **107 JVM tests, 0 failures**, executed by CI (`unit-tests` commit status carries the count). |
+| Unit tests | **117 JVM tests, 0 failures**, executed by CI (`unit-tests` commit status carries the count). |
 | Widgets | 2x2 compact and 4x2 forecast home-screen widgets with per-widget city selection, 30-minute background refresh, a built-in reliability page and an in-context nudge when refresh actually stalls. |
 | Notifications | Local WorkManager-scheduled daily summary and rain alerts (not remote push). Severe-weather alerts are explicitly unavailable rather than fabricated. |
 
@@ -50,7 +50,7 @@ The device screenshots showed a clear afternoon rendered with a midnight sky, a 
 
 ## Round 5 changes at a glance
 
-The reliability page from the previous round answered "why is my widget old?" — but only for people who went looking for it. Setup screens cannot carry that message, because nobody opens them twice. This round puts the answer where the symptom appears.
+The reliability page from the previous round answered "why is my widget old?" — but only for people who went looking for it. A setup screen cannot carry that message on its own, because nobody opens it twice. This round puts the answer where the symptom appears; round 6 then adds the up-front slide for the minority who do read setup.
 
 | Area | What changed | Files |
 |---|---|---|
@@ -64,6 +64,24 @@ The reliability page from the previous round answered "why is my widget old?" �
 | Tests | 12 new rule tests: healthy, stale, failed-after-success, no widget, offline, fresh install, dismissal, recovery, weekly cooldown, stable never-succeeded marker | `app/src/test/.../WidgetNudgeRulesTest.kt` |
 
 What this deliberately does **not** do: request a battery exemption automatically, repeat a prompt on every launch, or claim Android has restricted the app. It says what it observed ("hasn't refreshed since …") and puts the exact OEM menu one tap away.
+
+## Round 6: a background-updates slide in onboarding
+
+Round 5 put the message where the symptom appears, on the assumption that nobody revisits setup screens. This round adds the other half, at the user's request: a fifth onboarding slide that explains *why* background updates matter, before anything goes wrong. The in-context nudge stays exactly as it is — it is still the path that catches everyone who skips or forgets this slide, which is most people.
+
+| Area | What changed | Files |
+|---|---|---|
+| Onboarding slide | New page between "Save Your Favorite Cities" and the notification opt-in (placed before it because alerts are only as punctual as the background work behind them). Explains that the widget and rain checks run while the app is closed, that Android decides the timing, and what the user sees when a phone pauses it — stale widget, late alerts | `ui/onboarding/OnboardingScreen.kt` |
+| Device detection | `Build.MANUFACTURER` + `Build.BRAND` → `DeviceVendor` (existing rules, so Redmi/POCO/Realme/OnePlus/iQOO/Honor resolve correctly) | `core/util/AutoStartSettings.kt`, `domain/widget/WidgetRefreshStatus.kt` |
+| Native settings intents | Ordered candidates per manufacturer — MIUI auto-start (component, then `miui.intent.action.OP_AUTO_START`), Huawei/Honor launch manager, ColorOS/Realme startup list, Vivo/iQOO background power manager. Each is tried in turn | `core/util/AutoStartSettings.kt` |
+| Safe fallback | Samsung, Pixel, stock Android, custom ROMs, or a firmware rename all land on `ACTION_APPLICATION_DETAILS_SETTINGS` for this package. The button label changes with it ("Open auto-start settings" vs "Open app settings") | `core/util/AutoStartSettings.kt`, `ui/onboarding/OnboardingScreen.kt` |
+| Package visibility | `<queries>` for the seven manufacturer packages plus the MIUI action, so the lookup works on Android 11+ | `AndroidManifest.xml` |
+| Honest limits | The card states that SKYORA cannot change the setting for the user or see whether it changed. Nothing is persisted, nothing is marked "done", and the flow never blocks | strings, `OnboardingScreen.kt` |
+| Shared copy | The manufacturer instructions moved out of the reliability page into one helper, so onboarding and reliability can never give conflicting steps | `ui/designsystem/DeviceGuidance.kt`, `ui/widgets/WidgetReliabilityScreen.kt` |
+| Artwork | New `BackgroundRefreshArt`: a widget card with a turning refresh ring and a battery plate — abstract bars, no invented temperatures | `ui/designsystem/Illustrations.kt` |
+| Tests | 10 new: vendor mapping for all six vendors and their sub-brands, Samsung/Pixel/unknown → no OEM candidate, no duplicates, no candidate can point at SKYORA itself | `app/src/test/.../AutoStartRulesTest.kt` |
+
+Still deliberately absent: `ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS`, any automatic battery-exemption prompt, and any claim that a device *has* a restriction. The slide opens a system screen; the user decides.
 
 ## Get the app
 
