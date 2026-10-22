@@ -64,6 +64,18 @@
     <string name="onboarding_illustration_forecast">Illustration of a weather app card showing a sunny forecast</string>
     <string name="onboarding_illustration_location">Illustration of a location pin with gentle signal rings</string>
     <string name="onboarding_illustration_cities">Illustration of a list of saved cities</string>
+    <!-- Onboarding: background updates (placed before the notification opt-in,
+         because alerts are only as punctual as the background work behind them). -->
+    <string name="onboarding_badge_background">Optional</string>
+    <string name="onboarding_background_title">Weather That Stays Current</string>
+    <string name="onboarding_background_body">SKYORA refreshes your widget and checks for rain while the app is closed. Android decides exactly when, and some phones pause background work to save battery — then the widget keeps showing the last forecast and alerts can arrive late.</string>
+    <string name="onboarding_illustration_background">Illustration of a weather widget refreshing while the phone manages battery use</string>
+    <string name="onboarding_background_card_autostart">Let it update in the background</string>
+    <string name="onboarding_background_card_app_info">Battery and background use</string>
+    <string name="onboarding_background_open_autostart">Open auto-start settings</string>
+    <string name="onboarding_background_open_launch">Open app launch settings</string>
+    <string name="onboarding_background_open_app">Open app settings</string>
+    <string name="onboarding_background_note">SKYORA can\'t change this setting for you, or see whether it changed. You can revisit it any time in Settings › Widgets › Widget reliability.</string>
     <string name="onboarding_4_title">Never Miss the Weather</string>
     <string name="onboarding_4_body">Turn on a daily summary and rain alerts now — you can change or turn them off any time in Settings.</string>
     <string name="onboarding_badge_notifications">Optional</string>

@@ -25,6 +25,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.OpenInNew
 import androidx.compose.material.icons.outlined.Remove
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
@@ -52,10 +53,14 @@ import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.skyora.weather.R
+import com.skyora.weather.core.util.AutoStartRules
 import com.skyora.weather.core.util.NOTIFICATIONS
+import com.skyora.weather.core.util.openBackgroundSettings
 import com.skyora.weather.core.util.openNotificationSettings
 import com.skyora.weather.core.util.rememberNowMillis
 import com.skyora.weather.di.AppContainer
+import com.skyora.weather.domain.widget.DeviceVendor
+import com.skyora.weather.ui.designsystem.BackgroundRefreshArt
 import com.skyora.weather.ui.designsystem.EmptyCitiesArt
 import com.skyora.weather.ui.designsystem.ForecastPreviewArt
 import com.skyora.weather.ui.designsystem.LocationRingsArt
@@ -65,10 +70,12 @@ import com.skyora.weather.ui.designsystem.SkyoraCard
 import com.skyora.weather.ui.designsystem.SkyoraDivider
 import com.skyora.weather.ui.designsystem.SkyoraIconButton
 import com.skyora.weather.ui.designsystem.SkyoraPrimaryButton
+import com.skyora.weather.ui.designsystem.SkyoraSecondaryButton
 import com.skyora.weather.ui.designsystem.SkyoraSegmentedControl
 import com.skyora.weather.ui.designsystem.SkyoraStatusChip
 import com.skyora.weather.ui.designsystem.SkyoraTextButton
 import com.skyora.weather.ui.designsystem.rememberAmbientSkyMoment
+import com.skyora.weather.ui.designsystem.vendorGuidanceText
 import com.skyora.weather.ui.theme.SkyoraColors
 import com.skyora.weather.ui.theme.SkyoraSpacing
 import kotlinx.coroutines.launch
@@ -81,6 +88,8 @@ private data class OnboardingPage(
     val art: @Composable (Modifier) -> Unit,
     /** The last slide also hosts the real notification opt-in controls. */
     val hostsNotificationStep: Boolean = false,
+    /** This slide explains background updates and offers the device's setting. */
+    val hostsBackgroundStep: Boolean = false,
 )
 
 private val Pages = listOf(
@@ -104,6 +113,14 @@ private val Pages = listOf(
         badgeRes = null,
         illustrationDescriptionRes = R.string.onboarding_illustration_cities,
         art = { modifier -> EmptyCitiesArt(modifier) },
+    ),
+    OnboardingPage(
+        titleRes = R.string.onboarding_background_title,
+        bodyRes = R.string.onboarding_background_body,
+        badgeRes = R.string.onboarding_badge_background,
+        illustrationDescriptionRes = R.string.onboarding_illustration_background,
+        art = { modifier -> BackgroundRefreshArt(modifier) },
+        hostsBackgroundStep = true,
     ),
     OnboardingPage(
         titleRes = R.string.onboarding_4_title,
@@ -139,6 +156,13 @@ fun OnboardingScreen(
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     val notificationState by viewModel.notificationState.collectAsStateWithLifecycle()
+
+    // Checked once: the manufacturer and brand this build is running on decide
+    // which settings screen the background step offers. A device that lies, or a
+    // custom ROM, simply ends up on the standard app-info fallback.
+    val vendor = remember {
+        AutoStartRules.vendorFor(Build.MANUFACTURER.orEmpty(), Build.BRAND.orEmpty())
+    }
 
     // The OS-level state, not just the runtime grant: the user may have turned
     // SKYORA notifications off in system settings.
@@ -263,6 +287,13 @@ fun OnboardingScreen(
                         color = SkyoraColors.TextSecondary,
                         textAlign = TextAlign.Center,
                     )
+                    if (page.hostsBackgroundStep) {
+                        Spacer(Modifier.height(SkyoraSpacing.lg))
+                        OnboardingBackgroundStep(
+                            vendor = vendor,
+                            onOpenSettings = { context.openBackgroundSettings(vendor) },
+                        )
+                    }
                     if (page.hostsNotificationStep) {
                         Spacer(Modifier.height(SkyoraSpacing.lg))
                         OnboardingNotificationStep(
@@ -348,6 +379,62 @@ fun OnboardingScreen(
                 )
             }
         }
+    }
+}
+
+/**
+ * Background-updates step: what breaks when the phone pauses SKYORA, and one
+ * button that opens whichever screen this manufacturer actually ships.
+ *
+ * Two honest limits, both stated in the card: the button opens a system screen
+ * and cannot change the setting itself, and the app cannot read afterwards
+ * whether the user did. That is why nothing here is a checklist item and why
+ * the flow never blocks on it — the in-context nudge on Home covers the case
+ * where someone skips this and the widget really does stop updating later.
+ */
+@Composable
+private fun OnboardingBackgroundStep(
+    vendor: DeviceVendor,
+    onOpenSettings: () -> Unit,
+) {
+    val hasAutoStart = AutoStartRules.hasAutoStartScreen(vendor)
+    SkyoraCard(modifier = Modifier.fillMaxWidth()) {
+        Text(
+            text = stringResource(
+                if (hasAutoStart) {
+                    R.string.onboarding_background_card_autostart
+                } else {
+                    R.string.onboarding_background_card_app_info
+                },
+            ),
+            style = MaterialTheme.typography.titleSmall,
+            color = SkyoraColors.TextPrimary,
+        )
+        Spacer(Modifier.height(SkyoraSpacing.xxs))
+        Text(
+            text = vendorGuidanceText(vendor),
+            style = MaterialTheme.typography.bodySmall,
+            color = SkyoraColors.TextSecondary,
+        )
+        Spacer(Modifier.height(SkyoraSpacing.sm))
+        SkyoraSecondaryButton(
+            text = stringResource(
+                when {
+                    !hasAutoStart -> R.string.onboarding_background_open_app
+                    vendor == DeviceVendor.HUAWEI ->
+                        R.string.onboarding_background_open_launch
+                    else -> R.string.onboarding_background_open_autostart
+                },
+            ),
+            onClick = onOpenSettings,
+            icon = Icons.Outlined.OpenInNew,
+        )
+        Spacer(Modifier.height(SkyoraSpacing.xs))
+        Text(
+            text = stringResource(R.string.onboarding_background_note),
+            style = MaterialTheme.typography.bodySmall,
+            color = SkyoraColors.TextTertiary,
+        )
     }
 }
 

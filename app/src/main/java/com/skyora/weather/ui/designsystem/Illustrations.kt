@@ -23,8 +23,10 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.outlined.BatteryAlert
 import androidx.compose.material.icons.outlined.Cloud
 import androidx.compose.material.icons.outlined.NotificationsNone
+import androidx.compose.material.icons.outlined.Widgets
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -47,8 +49,6 @@ import com.skyora.weather.ui.theme.SkyoraColors
 import com.skyora.weather.ui.theme.SkyoraTextStyles
 import androidx.compose.ui.res.stringResource
 import com.skyora.weather.R
-import kotlin.math.cos
-import kotlin.math.sin
 
 /** Pulsing location rings with a gradient pin, used on permission and onboarding. */
 @Composable
@@ -394,6 +394,148 @@ private fun NotificationCardMock(
                     .height(5.dp)
                     .clip(RoundedCornerShape(50))
                     .background(accent.copy(alpha = 0.45f)),
+            )
+        }
+    }
+}
+
+/**
+ * A widget card with refresh arrows and a battery plate: "this keeps updating
+ * while the app is closed, unless the phone pauses it".
+ *
+ * Bars rather than temperatures — onboarding runs before any forecast exists,
+ * and inventing a number here would be the same kind of fake data the app
+ * avoids everywhere else. Nothing in the drawing claims the device *has* a
+ * restriction; the ring simply keeps turning.
+ */
+@Composable
+fun BackgroundRefreshArt(modifier: Modifier = Modifier) {
+    val transition = rememberInfiniteTransition(label = "backgroundRefresh")
+    val spin by transition.animateFloat(
+        initialValue = 0f,
+        targetValue = 360f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 9_000, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart,
+        ),
+        label = "refreshSpin",
+    )
+
+    Box(modifier = modifier, contentAlignment = Alignment.Center) {
+        // Turning halo: the background job, still going.
+        Canvas(
+            modifier = Modifier
+                .size(196.dp)
+                .graphicsLayer { rotationZ = spin },
+        ) {
+            val stroke = 1.6.dp.toPx()
+            drawArc(
+                color = SkyoraColors.Cyan.copy(alpha = 0.55f),
+                startAngle = -70f,
+                sweepAngle = 96f,
+                useCenter = false,
+                style = Stroke(width = stroke, cap = StrokeCap.Round),
+            )
+            drawArc(
+                color = SkyoraColors.Cyan.copy(alpha = 0.18f),
+                startAngle = 40f,
+                sweepAngle = 58f,
+                useCenter = false,
+                style = Stroke(width = stroke, cap = StrokeCap.Round),
+            )
+        }
+
+        Column(
+            modifier = Modifier
+                .width(206.dp)
+                .clip(RoundedCornerShape(24.dp))
+                .background(SkyoraColors.Navy.copy(alpha = 0.94f))
+                .border(1.dp, SkyoraColors.BorderStrong, RoundedCornerShape(24.dp))
+                .padding(horizontal = 16.dp, vertical = 15.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    Icons.Outlined.Widgets,
+                    contentDescription = null,
+                    tint = SkyoraColors.CyanSoft,
+                    modifier = Modifier.size(15.dp),
+                )
+                Spacer(Modifier.width(7.dp))
+                Box(
+                    Modifier
+                        .fillMaxWidth(0.52f)
+                        .height(7.dp)
+                        .clip(RoundedCornerShape(50))
+                        .background(SkyoraColors.TextPrimary.copy(alpha = 0.72f)),
+                )
+            }
+            // The four hourly cells of the widget, as placeholders.
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(9.dp),
+            ) {
+                repeat(4) { index ->
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(6.dp),
+                    ) {
+                        Box(
+                            Modifier
+                                .fillMaxWidth(0.62f)
+                                .height(5.dp)
+                                .clip(RoundedCornerShape(50))
+                                .background(SkyoraColors.TextTertiary.copy(alpha = 0.55f)),
+                        )
+                        Box(
+                            Modifier
+                                .size(12.dp)
+                                .clip(CircleShape)
+                                .background(
+                                    if (index == 2) {
+                                        SkyoraColors.Cyan.copy(alpha = 0.45f)
+                                    } else {
+                                        SkyoraColors.TextSecondary.copy(alpha = 0.22f)
+                                    },
+                                ),
+                        )
+                        Box(
+                            Modifier
+                                .fillMaxWidth(0.5f)
+                                .height(5.dp)
+                                .clip(RoundedCornerShape(50))
+                                .background(SkyoraColors.TextSecondary.copy(alpha = 0.28f)),
+                        )
+                    }
+                }
+            }
+        }
+
+        // Battery plate: the thing the slide is really about.
+        Row(
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(end = 10.dp, bottom = 12.dp)
+                .clip(RoundedCornerShape(50))
+                .background(SkyoraColors.NavySoft)
+                .border(1.dp, SkyoraColors.BorderStrong, RoundedCornerShape(50))
+                .padding(horizontal = 10.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                Icons.Outlined.BatteryAlert,
+                contentDescription = null,
+                tint = SkyoraColors.Warning,
+                modifier = Modifier.size(13.dp),
+            )
+            Spacer(Modifier.width(6.dp))
+            Box(
+                Modifier
+                    .width(38.dp)
+                    .height(5.dp)
+                    .clip(RoundedCornerShape(50))
+                    .background(SkyoraColors.TextSecondary.copy(alpha = 0.4f)),
             )
         }
     }

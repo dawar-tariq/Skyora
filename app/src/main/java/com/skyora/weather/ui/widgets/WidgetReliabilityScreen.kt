@@ -49,7 +49,6 @@ import com.skyora.weather.di.AppContainer
 import com.skyora.weather.domain.model.SkyCondition
 import com.skyora.weather.domain.model.SkyMoment
 import com.skyora.weather.domain.model.SkyPhase
-import com.skyora.weather.domain.widget.DeviceVendor
 import com.skyora.weather.domain.widget.WidgetRefreshHealth
 import com.skyora.weather.domain.widget.WidgetRefreshOutcome
 import com.skyora.weather.ui.designsystem.ScreenHeader
@@ -61,6 +60,7 @@ import com.skyora.weather.ui.designsystem.SkyoraSectionLabel
 import com.skyora.weather.ui.designsystem.SkyoraSnackbarHost
 import com.skyora.weather.ui.designsystem.SkyoraTextButton
 import com.skyora.weather.ui.designsystem.screenBottomPadding
+import com.skyora.weather.ui.designsystem.vendorGuidanceText
 import com.skyora.weather.ui.theme.SkyoraColors
 import com.skyora.weather.ui.theme.SkyoraSpacing
 import kotlinx.coroutines.launch
@@ -277,15 +277,6 @@ private fun healthLabel(state: WidgetReliabilityState): String = when (state.hea
     WidgetRefreshHealth.NEVER_RAN -> stringResource(R.string.reliability_health_never)
 }
 
-@Composable
-private fun vendorGuidance(vendor: DeviceVendor): String = when (vendor) {
-    DeviceVendor.XIAOMI -> stringResource(R.string.reliability_help_xiaomi)
-    DeviceVendor.HUAWEI -> stringResource(R.string.reliability_help_huawei)
-    DeviceVendor.OPPO -> stringResource(R.string.reliability_help_oppo)
-    DeviceVendor.VIVO -> stringResource(R.string.reliability_help_vivo)
-    DeviceVendor.SAMSUNG -> stringResource(R.string.reliability_help_samsung)
-    DeviceVendor.OTHER -> stringResource(R.string.reliability_help_generic)
-}
 
 /** Which card is showing; also the order they appear in. */
 private enum class Section { HELP, ACTION, REFRESH, SYSTEM }
@@ -420,7 +411,7 @@ private fun HelpCard(
         if (!state.guideDismissed) {
             Spacer(Modifier.height(SkyoraSpacing.sm))
             Text(
-                text = vendorGuidance(state.vendor),
+                text = vendorGuidanceText(state.vendor),
                 style = MaterialTheme.typography.bodySmall,
                 color = SkyoraColors.TextSecondary,
             )
